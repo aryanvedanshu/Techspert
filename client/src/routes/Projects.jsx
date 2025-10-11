@@ -13,9 +13,13 @@ const Projects = () => {
     const fetchProjects = async () => {
       try {
         const response = await api.get('/projects')
-        setProjects(response.data)
+        // The server returns { success: true, data: projects[] }
+        const projectsData = response.data.data || []
+        setProjects(projectsData)
       } catch (error) {
         console.error('Error fetching projects:', error)
+        // Set empty array on error to prevent crashes
+        setProjects([])
       } finally {
         setLoading(false)
       }
@@ -79,7 +83,7 @@ const Projects = () => {
       <section className="py-16">
         <div className="container-custom">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project, index) => {
+            {Array.isArray(projects) && projects.map((project, index) => {
               const {
                 _id,
                 title,

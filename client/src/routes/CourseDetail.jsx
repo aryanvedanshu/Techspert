@@ -16,10 +16,12 @@ const CourseDetail = () => {
     const fetchCourse = async () => {
       try {
         const response = await api.get(`/courses/${id}`)
-        setCourse(response.data)
+        // The server returns { success: true, data: course }
+        setCourse(response.data.data || null)
       } catch (error) {
         console.error('Error fetching course:', error)
         setError('Course not found')
+        setCourse(null)
       } finally {
         setLoading(false)
       }
@@ -82,14 +84,14 @@ const CourseDetail = () => {
     duration,
     level,
     price,
-    rating = 4.8,
+    rating = { average: 4.8, count: 1250 },
     studentsCount = 1250,
     tags = [],
     syllabus = [],
     instructor = 'Techspert Team',
     requirements = [],
     whatYouWillLearn = []
-  } = course
+  } = course || {}
 
   const getLevelColor = (level) => {
     switch (level?.toLowerCase()) {
@@ -135,7 +137,7 @@ const CourseDetail = () => {
                       </span>
                       <div className="flex items-center gap-1 text-sm text-neutral-600">
                         <Star size={16} className="text-yellow-400 fill-current" />
-                        <span>{rating}</span>
+                        <span>{rating.average || rating}</span>
                         <span>({studentsCount.toLocaleString()} students)</span>
                       </div>
                     </div>
@@ -290,7 +292,7 @@ const CourseDetail = () => {
                     <span className="text-neutral-600">Rating</span>
                     <div className="flex items-center gap-1">
                       <Star size={16} className="text-yellow-400 fill-current" />
-                      <span className="font-medium">{rating}</span>
+                      <span className="font-medium">{rating.average || rating}</span>
                     </div>
                   </div>
                 </div>
@@ -300,12 +302,12 @@ const CourseDetail = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold">
-                        {instructor.charAt(0)}
+                        {(instructor.name || instructor).charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <div className="font-medium text-neutral-900">{instructor}</div>
-                      <div className="text-sm text-neutral-600">Techspert Expert</div>
+                      <div className="font-medium text-neutral-900">{instructor.name || instructor}</div>
+                      <div className="text-sm text-neutral-600">{instructor.bio || 'Techspert Expert'}</div>
                     </div>
                   </div>
                 </div>

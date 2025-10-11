@@ -61,13 +61,25 @@ export const getCourses = asyncHandler(async (req, res) => {
 // @route   GET /api/courses/:id
 // @access  Public
 export const getCourse = asyncHandler(async (req, res) => {
-  const course = await Course.findOne({
-    $or: [
-      { _id: req.params.id },
-      { slug: req.params.id },
-    ],
-    isPublished: true,
-  })
+  const { id } = req.params
+  
+  // Check if id is a valid ObjectId format
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(id)
+  
+  let course
+  if (isObjectId) {
+    // Search by _id if it's a valid ObjectId
+    course = await Course.findOne({
+      _id: id,
+      isPublished: true,
+    })
+  } else {
+    // Search by slug if it's not an ObjectId
+    course = await Course.findOne({
+      slug: id,
+      isPublished: true,
+    })
+  }
 
   if (!course) {
     return res.status(404).json({

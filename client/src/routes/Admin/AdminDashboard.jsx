@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Users, BookOpen, Code, Award, TrendingUp, Eye, Plus, Settings } from 'lucide-react'
+import { Users, BookOpen, Code, Award, TrendingUp, Eye, Plus, Settings, Palette, Mail, Globe, Shield } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
@@ -27,9 +27,9 @@ const AdminDashboard = () => {
         ])
         
         setStats({
-          totalCourses: coursesRes.data.length,
-          totalProjects: projectsRes.data.length,
-          totalAlumni: alumniRes.data.length,
+          totalCourses: coursesRes.data.count || 0,
+          totalProjects: projectsRes.data.count || 0,
+          totalAlumni: alumniRes.data.count || 0,
           totalStudents: 1250, // Mock data
         })
       } catch (error) {
@@ -99,11 +99,42 @@ const AdminDashboard = () => {
       color: 'bg-green-500',
     },
     {
-      title: 'Manage Settings',
+      title: 'Site Settings',
       description: 'Configure site settings and preferences',
       icon: Settings,
-      link: '#',
+      link: '/admin/settings',
       color: 'bg-purple-500',
+    },
+  ]
+
+  const contentManagementCards = [
+    {
+      title: 'Theme & Branding',
+      description: 'Customize colors, logos, and visual identity',
+      icon: Palette,
+      link: '/admin/theme',
+      color: 'bg-pink-500',
+    },
+    {
+      title: 'Contact Settings',
+      description: 'Update contact information and email settings',
+      icon: Mail,
+      link: '/admin/contact',
+      color: 'bg-indigo-500',
+    },
+    {
+      title: 'Home Page Content',
+      description: 'Edit hero text, features, and homepage content',
+      icon: Globe,
+      link: '/admin/homepage',
+      color: 'bg-teal-500',
+    },
+    {
+      title: 'Security & Features',
+      description: 'Manage feature flags and security settings',
+      icon: Shield,
+      link: '/admin/security',
+      color: 'bg-red-500',
     },
   ]
 
@@ -198,6 +229,47 @@ const AdminDashboard = () => {
                             </h3>
                             <p className="text-sm text-neutral-600">
                               {action.description}
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Content Management */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Card>
+                <h2 className="text-xl font-heading font-semibold text-neutral-900 mb-6">
+                  Content Management
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {contentManagementCards.map((card, index) => {
+                    const Icon = card.icon
+                    return (
+                      <Link
+                        key={card.title}
+                        to={card.link}
+                        className="block p-4 border border-neutral-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 ${card.color} rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                            <Icon size={20} className="text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors duration-200">
+                              {card.title}
+                            </h3>
+                            <p className="text-sm text-neutral-600">
+                              {card.description}
                             </p>
                           </div>
                         </div>

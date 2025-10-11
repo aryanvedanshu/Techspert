@@ -12,9 +12,13 @@ const Alumni = () => {
     const fetchAlumni = async () => {
       try {
         const response = await api.get('/alumni')
-        setAlumni(response.data)
+        // The server returns { success: true, data: alumni[] }
+        const alumniData = response.data.data || []
+        setAlumni(alumniData)
       } catch (error) {
         console.error('Error fetching alumni:', error)
+        // Set empty array on error to prevent crashes
+        setAlumni([])
       } finally {
         setLoading(false)
       }
@@ -67,7 +71,7 @@ const Alumni = () => {
       <section className="py-16">
         <div className="container-custom">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {alumni.map((alumnus, index) => {
+            {Array.isArray(alumni) && alumni.map((alumnus, index) => {
               const {
                 _id,
                 name,

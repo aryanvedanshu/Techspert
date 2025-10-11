@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Star, Users, Award, Code, Database, Brain } from 'lucide-react'
+import { ArrowRight, Play, Star, Users, Award, Code, Database, Brain, ExternalLink } from 'lucide-react'
 import { api } from '../services/api'
 import CourseCard from '../components/CourseCard'
 import Button from '../components/UI/Button'
@@ -9,21 +9,52 @@ import Card from '../components/UI/Card'
 
 const Home = () => {
   const [courses, setCourses] = useState([])
+  const [alumni, setAlumni] = useState([])
+  const [siteSettings, setSiteSettings] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('/courses')
-        setCourses(response.data.slice(0, 3)) // Show only first 3 courses
+        // Fetch courses, alumni, and site settings in parallel
+        const [coursesResponse, alumniResponse, settingsResponse] = await Promise.all([
+          api.get('/courses?featured=true&limit=3'),
+          api.get('/alumni?featured=true&limit=3'),
+          api.get('/settings')
+        ])
+        
+        setCourses(coursesResponse.data.data || [])
+        setAlumni(alumniResponse.data.data || [])
+        setSiteSettings(settingsResponse.data.data)
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching data:', error)
+        // Set empty arrays on error to prevent crashes
+        setCourses([])
+        setAlumni([])
+        // Set default settings if fetch fails
+        setSiteSettings({
+          homePage: {
+            hero: {
+              title: 'Master the Future of Technology',
+              subtitle: 'Learn cutting-edge skills from industry experts and build your dream career in tech',
+              ctaText: 'Start Learning Today',
+            },
+            features: {
+              title: 'Why Choose Techspert?',
+              subtitle: 'We provide comprehensive learning experiences designed for real-world success',
+            },
+            stats: {
+              title: 'Our Impact',
+              subtitle: 'Join thousands of successful graduates who have transformed their careers',
+            },
+          },
+        })
       } finally {
         setLoading(false)
       }
     }
 
-    fetchCourses()
+    fetchData()
   }, [])
 
   const stats = [
@@ -66,13 +97,12 @@ const Home = () => {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-neutral-900 mb-6 leading-tight">
-                Master Modern
-                <span className="gradient-text block">Technology</span>
+                {siteSettings?.homePage?.hero?.title || 'Master Modern'}
+                <span className="gradient-text block">{siteSettings?.homePage?.hero?.title?.split(' ').slice(1).join(' ') || 'Technology'}</span>
                 <span className="text-neutral-600">Skills</span>
               </h1>
               <p className="text-xl text-neutral-600 mb-8 leading-relaxed">
-                Join thousands of students learning cutting-edge technologies with our comprehensive courses, 
-                hands-on projects, and industry-recognized certificates.
+                {siteSettings?.homePage?.hero?.subtitle || 'Join thousands of students learning cutting-edge technologies with our comprehensive courses, hands-on projects, and industry-recognized certificates.'}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/courses">
@@ -226,6 +256,93 @@ const Home = () => {
                 </motion.div>
               )
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Alumni Success Stories */}
+      <section className="section-padding bg-neutral-50">
+        <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
+              Success Stories
+            </h2>
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              See how our alumni have transformed their careers with our courses
+            </p>
+          </motion.div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="w-20 h-20 bg-neutral-200 rounded-full mx-auto mb-4"></div>
+                  <div className="h-6 bg-neutral-200 rounded mb-2"></div>
+                  <div className="h-4 bg-neutral-200 rounded mb-4"></div>
+                  <div className="h-4 bg-neutral-200 rounded mb-2"></div>
+                  <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.isArray(alumni) && alumni.map((alumnus, index) => (
+                <motion.div
+                  key={alumnus._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Card hover className="text-center h-full">
+                    <div className="w-20 h-20 rounded-full mx-auto mb-6 overflow-hidden">
+                      <img
+                        src={alumnus.imageUrl}
+                        alt={alumnus.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-2">
+                      {alumnus.name}
+                    </h3>
+                    <p className="text-primary-600 font-medium mb-2">
+                      {alumnus.title} at {alumnus.company}
+                    </p>
+                    <p className="text-sm text-neutral-500 mb-4">
+                      {alumnus.course} Graduate
+                    </p>
+                    <p className="text-neutral-600 text-sm leading-relaxed mb-4 line-clamp-3">
+                      "{alumnus.testimonial}"
+                    </p>
+                    <div className="flex justify-center space-x-3">
+                      {alumnus.socialLinks?.linkedin && (
+                        <a
+                          href={alumnus.socialLinks.linkedin}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neutral-400 hover:text-primary-600 transition-colors"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      )}
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-12">
+            <Link to="/alumni">
+              <Button variant="outline" size="lg">
+                View All Success Stories
+                <ArrowRight size={20} className="ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

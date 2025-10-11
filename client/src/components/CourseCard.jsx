@@ -13,7 +13,7 @@ const CourseCard = ({ course, index = 0 }) => {
     duration,
     level,
     price,
-    rating = 4.8,
+    rating = { average: 4.8, count: 1250 },
     studentsCount = 1250,
     tags = [],
     slug
@@ -107,7 +107,7 @@ const CourseCard = ({ course, index = 0 }) => {
             </div>
             <div className="flex items-center space-x-1">
               <Star size={16} className="text-yellow-400 fill-current" />
-              <span>{rating}</span>
+              <span>{rating.average || rating}</span>
             </div>
           </div>
 

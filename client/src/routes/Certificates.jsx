@@ -13,9 +13,13 @@ const Certificates = () => {
     const fetchCertificates = async () => {
       try {
         const response = await api.get('/certificates')
-        setCertificates(response.data)
+        // The server returns { success: true, data: certificates[] }
+        const certificatesData = response.data.data || []
+        setCertificates(certificatesData)
       } catch (error) {
         console.error('Error fetching certificates:', error)
+        // Set empty array on error to prevent crashes
+        setCertificates([])
       } finally {
         setLoading(false)
       }
@@ -81,7 +85,7 @@ const Certificates = () => {
       <section className="py-16">
         <div className="container-custom">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {certificates.map((certificate, index) => {
+            {Array.isArray(certificates) && certificates.map((certificate, index) => {
               const {
                 _id,
                 courseName,

@@ -13,6 +13,7 @@ import courseRoutes from './routes/courses.js'
 import projectRoutes from './routes/projects.js'
 import alumniRoutes from './routes/alumni.js'
 import adminRoutes from './routes/admin.js'
+import settingsRoutes from './routes/settings.js'
 
 // Load environment variables
 dotenv.config()
@@ -80,6 +81,7 @@ app.use('/api/courses', courseRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/alumni', alumniRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/settings', settingsRoutes)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -91,6 +93,7 @@ app.get('/', (req, res) => {
       projects: '/api/projects',
       alumni: '/api/alumni',
       admin: '/api/admin',
+      settings: '/api/settings',
       health: '/health',
     },
   })

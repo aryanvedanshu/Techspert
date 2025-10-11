@@ -16,7 +16,7 @@ const AdminAlumni = () => {
     const fetchAlumni = async () => {
       try {
         const response = await api.get('/alumni')
-        setAlumni(response.data)
+        setAlumni(response.data.data || [])
       } catch (error) {
         console.error('Error fetching alumni:', error)
       } finally {

@@ -16,7 +16,7 @@ const AdminCourses = () => {
     const fetchCourses = async () => {
       try {
         const response = await api.get('/courses')
-        setCourses(response.data)
+        setCourses(response.data.data || [])
       } catch (error) {
         console.error('Error fetching courses:', error)
       } finally {

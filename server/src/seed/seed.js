@@ -4,6 +4,7 @@ import Course from '../models/Course.js'
 import Project from '../models/Project.js'
 import Alumni from '../models/Alumni.js'
 import Admin from '../models/Admin.js'
+import SiteSettings from '../models/SiteSettings.js'
 
 // Load environment variables
 dotenv.config()
@@ -492,6 +493,80 @@ const seedAdmin = async () => {
   console.log('🔑 Password: ChangeMe123!')
 }
 
+const seedSiteSettings = async () => {
+  const settings = {
+    siteName: 'Techspert',
+    siteDescription: 'Learn cutting-edge technology skills with expert guidance and build your dream career in tech',
+    siteTagline: 'Empowering the next generation of tech professionals',
+    
+    logo: {
+      light: '/images/logo-light.png',
+      dark: '/images/logo-dark.png',
+      favicon: '/images/favicon.ico',
+    },
+    
+    theme: {
+      primary: '#0ea5e9',
+      secondary: '#14b8a6',
+      accent: '#a855f7',
+      background: '#ffffff',
+    },
+    
+    contact: {
+      email: 'contact@techspert.com',
+      supportEmail: 'support@techspert.com',
+      phone: '+1-555-123-4567',
+      address: '123 Tech Street, San Francisco, CA 94105',
+    },
+    
+    socialMedia: {
+      github: 'https://github.com/techspert',
+      twitter: 'https://twitter.com/techspert',
+      linkedin: 'https://linkedin.com/company/techspert',
+      youtube: 'https://youtube.com/techspert',
+      instagram: 'https://instagram.com/techspert',
+      facebook: 'https://facebook.com/techspert',
+    },
+    
+    homePage: {
+      hero: {
+        title: 'Master the Future of Technology',
+        subtitle: 'Learn cutting-edge skills from industry experts and build your dream career in tech',
+        ctaText: 'Start Learning Today',
+        backgroundImage: '/images/hero-bg.jpg',
+      },
+      features: {
+        title: 'Why Choose Techspert?',
+        subtitle: 'We provide comprehensive learning experiences designed for real-world success',
+      },
+      stats: {
+        title: 'Our Impact',
+        subtitle: 'Join thousands of successful graduates who have transformed their careers',
+      },
+    },
+    
+    seo: {
+      metaTitle: 'Techspert - Learn Technology Skills Online',
+      metaDescription: 'Master cutting-edge technology skills with expert guidance. Join thousands of successful graduates.',
+      keywords: ['technology', 'programming', 'courses', 'online learning', 'tech skills'],
+      ogImage: '/images/og-image.jpg',
+    },
+    
+    features: {
+      enableRegistration: true,
+      enableComments: true,
+      enableRatings: true,
+      enableCertificates: true,
+      enableNewsletter: true,
+      enableBlog: false,
+    },
+  }
+
+  await SiteSettings.deleteMany({})
+  await SiteSettings.create(settings)
+  console.log('✅ Site settings seeded successfully')
+}
+
 const seedDatabase = async () => {
   try {
     await connectDB()
@@ -502,6 +577,7 @@ const seedDatabase = async () => {
     await seedProjects()
     await seedAlumni()
     await seedAdmin()
+    await seedSiteSettings()
     
     console.log('🎉 Database seeding completed successfully!')
     process.exit(0)
@@ -512,7 +588,7 @@ const seedDatabase = async () => {
 }
 
 // Run seeding if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && process.argv[1].includes('seed.js')) {
   seedDatabase()
 }
 

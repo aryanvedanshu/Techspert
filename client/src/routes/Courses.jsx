@@ -20,10 +20,15 @@ const Courses = () => {
     const fetchCourses = async () => {
       try {
         const response = await api.get('/courses')
-        setCourses(response.data)
-        setFilteredCourses(response.data)
+        // The server returns { success: true, data: courses[] }
+        const coursesData = response.data.data || []
+        setCourses(coursesData)
+        setFilteredCourses(coursesData)
       } catch (error) {
         console.error('Error fetching courses:', error)
+        // Set empty arrays on error to prevent crashes
+        setCourses([])
+        setFilteredCourses([])
       } finally {
         setLoading(false)
       }
@@ -160,7 +165,7 @@ const Courses = () => {
       {/* Courses Grid */}
       <section className="py-16">
         <div className="container-custom">
-          {filteredCourses.length === 0 ? (
+          {!Array.isArray(filteredCourses) || filteredCourses.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -189,7 +194,7 @@ const Courses = () => {
                 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
                 : 'grid-cols-1'
             }`}>
-              {filteredCourses.map((course, index) => (
+              {Array.isArray(filteredCourses) && filteredCourses.map((course, index) => (
                 <CourseCard key={course._id} course={course} index={index} />
               ))}
             </div>
@@ -203,7 +208,7 @@ const Courses = () => {
             className="text-center mt-12"
           >
             <p className="text-neutral-600">
-              Showing {filteredCourses.length} of {courses.length} courses
+              Showing {Array.isArray(filteredCourses) ? filteredCourses.length : 0} of {Array.isArray(courses) ? courses.length : 0} courses
             </p>
           </motion.div>
         </div>

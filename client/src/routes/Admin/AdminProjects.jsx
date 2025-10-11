@@ -16,7 +16,7 @@ const AdminProjects = () => {
     const fetchProjects = async () => {
       try {
         const response = await api.get('/projects')
-        setProjects(response.data)
+        setProjects(response.data.data || [])
       } catch (error) {
         console.error('Error fetching projects:', error)
       } finally {
