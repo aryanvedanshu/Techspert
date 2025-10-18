@@ -1,8 +1,67 @@
 import jwt from 'jsonwebtoken'
+import User from '../models/User.js'
 import Admin from '../models/Admin.js'
 
-// Verify JWT token
+// Verify JWT token for users
 export const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required',
+      })
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    
+    // Find user and check if still active
+    const user = await User.findById(decoded.id).select('-password')
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token',
+      })
+    }
+
+    // Check if account is locked
+    if (user.isLocked) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is temporarily locked due to multiple failed login attempts',
+      })
+    }
+
+    req.user = user
+    next()
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token',
+      })
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired',
+      })
+    }
+
+    console.error('Auth middleware error:', error)
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication error',
+    })
+  }
+}
+
+// Verify JWT token for admins
+export const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
     const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN

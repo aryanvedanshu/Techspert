@@ -23,10 +23,118 @@
     <meta property="twitter:image" content="https://techspert.com/og-image.jpg" />
 
     <title>Techspert - Master the Future of Technology</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Splash Screen Styles -->
+    <style>
+      #splash-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      .splash-logo {
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        animation: pulse 2s infinite;
+      }
+      
+      .splash-logo svg {
+        width: 40px;
+        height: 40px;
+        color: #0ea5e9;
+      }
+      
+      .splash-title {
+        color: white;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      .splash-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1rem;
+        font-weight: 400;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      .splash-loader {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-top: 32px;
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .splash-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+      <div class="splash-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="splash-title">Techspert</div>
+      <div class="splash-subtitle">Master Modern Technology Skills</div>
+      <div class="splash-loader"></div>
+    </div>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Splash Screen Script -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const splash = document.getElementById('splash-screen');
+          splash.classList.add('splash-hidden');
+          setTimeout(function() {
+            splash.remove();
+          }, 500);
+        }, 2000);
+      });
+    </script>
   </body>
 </html>
 

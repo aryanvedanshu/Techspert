@@ -4,6 +4,7 @@ import Course from '../models/Course.js'
 import Project from '../models/Project.js'
 import Alumni from '../models/Alumni.js'
 import Admin from '../models/Admin.js'
+import User from '../models/User.js'
 import SiteSettings from '../models/SiteSettings.js'
 
 // Load environment variables
@@ -470,13 +471,14 @@ const seedAlumni = async () => {
 
 const seedAdmin = async () => {
   const admin = {
-    name: 'Techspert Admin',
-    email: 'admin@techspert.test',
-    password: 'ChangeMe123!',
+    name: 'Techspert Super Admin',
+    email: 'super-admin@techspert.ai',
+    password: 'Admin123',
     role: 'super-admin',
     isActive: true,
     profile: {
-      bio: 'System administrator for Techspert platform',
+      bio: 'Super administrator for Techspert platform',
+      imageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
     },
     permissions: {
       courses: { create: true, read: true, update: true, delete: true },
@@ -489,8 +491,57 @@ const seedAdmin = async () => {
   await Admin.deleteMany({})
   await Admin.create(admin)
   console.log('✅ Admin user seeded successfully')
-  console.log('📧 Email: admin@techspert.test')
-  console.log('🔑 Password: ChangeMe123!')
+  console.log('📧 Email: super-admin@techspert.ai')
+  console.log('🔑 Password: Admin123')
+}
+
+const seedUsers = async () => {
+  const users = [
+    {
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      password: 'Student123',
+      role: 'student',
+      bio: 'Passionate about learning new technologies and building amazing projects.',
+      location: 'San Francisco, CA',
+      website: 'https://johndoe.dev',
+      socialLinks: {
+        github: 'https://github.com/johndoe',
+        linkedin: 'https://linkedin.com/in/johndoe',
+        twitter: 'https://twitter.com/johndoe',
+      },
+      isEmailVerified: true,
+    },
+    {
+      name: 'Jane Smith',
+      email: 'jane.smith@example.com',
+      password: 'Instructor123',
+      role: 'instructor',
+      bio: 'Senior Software Engineer with 10+ years of experience in full-stack development.',
+      location: 'New York, NY',
+      website: 'https://janesmith.dev',
+      socialLinks: {
+        github: 'https://github.com/janesmith',
+        linkedin: 'https://linkedin.com/in/janesmith',
+      },
+      instructorProfile: {
+        title: 'Senior Software Engineer',
+        company: 'Tech Corp',
+        experience: 10,
+        specialties: ['React', 'Node.js', 'Python', 'AWS'],
+        rating: { average: 4.9, count: 150 },
+        totalStudents: 500,
+        isVerified: true,
+      },
+      isEmailVerified: true,
+    },
+  ]
+
+  await User.deleteMany({})
+  await User.insertMany(users)
+  console.log('✅ Sample users seeded successfully')
+  console.log('👤 Student: john.doe@example.com / Student123')
+  console.log('👨‍🏫 Instructor: jane.smith@example.com / Instructor123')
 }
 
 const seedSiteSettings = async () => {
@@ -577,6 +628,7 @@ const seedDatabase = async () => {
     await seedProjects()
     await seedAlumni()
     await seedAdmin()
+    await seedUsers()
     await seedSiteSettings()
     
     console.log('🎉 Database seeding completed successfully!')

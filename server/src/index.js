@@ -9,6 +9,7 @@ import { connectDB } from './config/db.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 // Import routes
+import authRoutes from './routes/auth.js'
 import courseRoutes from './routes/courses.js'
 import projectRoutes from './routes/projects.js'
 import alumniRoutes from './routes/alumni.js'
@@ -77,6 +78,7 @@ app.get('/health', (req, res) => {
 })
 
 // API routes
+app.use('/api/auth', authRoutes)
 app.use('/api/courses', courseRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/alumni', alumniRoutes)
@@ -89,6 +91,7 @@ app.get('/', (req, res) => {
     message: 'Techspert API Server',
     version: '1.0.0',
     endpoints: {
+      auth: '/api/auth',
       courses: '/api/courses',
       projects: '/api/projects',
       alumni: '/api/alumni',

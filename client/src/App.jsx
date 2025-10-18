@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/layout/Header'
@@ -44,6 +45,12 @@ function App() {
           </main>
           <Footer />
         </div>
+        <Toaster 
+          position="top-right" 
+          expand={true}
+          richColors={true}
+          closeButton={true}
+        />
       </AuthProvider>
     </ErrorBoundary>
   )

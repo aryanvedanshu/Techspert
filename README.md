@@ -79,9 +79,8 @@ techspert/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- MongoDB (local or Atlas)
-- Cloudinary account (for image uploads)
+- Docker and Docker Compose
+- Git
 
 ### 1. Clone and Setup
 ```bash
@@ -94,65 +93,38 @@ cd techspert
 # Copy environment template
 cp env.example .env
 
-# Edit .env with your configuration
-nano .env
+# The .env file is already configured for local development
+# No additional setup required!
 ```
 
-Required environment variables:
-```env
-# Database
-MONGO_URI=mongodb://localhost:27017/techspert
-
-# JWT
-JWT_SECRET=your-super-secret-jwt-key
-
-# Cloudinary (for image uploads)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# Client URL
-CLIENT_URL=http://localhost:5173
-```
-
-### 3. Install Dependencies
+### 3. Start the Application
 ```bash
-# Install backend dependencies
-cd server
-npm install
+# Build and start all services
+docker-compose up --build
 
-# Install frontend dependencies
-cd ../client
-npm install
+# Or run in detached mode
+docker-compose up --build -d
 ```
 
-### 4. Seed Database
-```bash
-cd server
-npm run seed
-```
+### 4. Access the Application
+- **Main Application**: http://localhost
+- **Admin Dashboard**: http://localhost/admin
+- **API Endpoints**: http://localhost/api
+- **Health Check**: http://localhost/health
 
-This creates:
-- 3 sample courses (AI, Data Science, MERN Stack)
-- 3 student projects
-- 3 alumni profiles
-- Admin user: `admin@techspert.test` / `ChangeMe123!`
+### 5. Default Login Credentials
+- **Super Admin**: `super-admin@techspert.ai` / `Admin123`
+- **Student**: `john.doe@example.com` / `Student123`
+- **Instructor**: `jane.smith@example.com` / `Instructor123`
 
-### 5. Start Development Servers
-```bash
-# Terminal 1: Start backend (port 5000)
-cd server
-npm run dev
-
-# Terminal 2: Start frontend (port 5173)
-cd client
-npm run dev
-```
-
-### 6. Access the Application
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:5000/api
-- **Admin Login**: http://localhost:5173/admin/login
+### 6. What's Included
+The system automatically seeds with:
+- ✅ 3 comprehensive courses (AI/ML, Data Science, MERN Stack)
+- ✅ 3 student projects with GitHub/demo links
+- ✅ 3 alumni success stories from top companies
+- ✅ Complete admin dashboard with CRUD operations
+- ✅ Professional branding and splash animations
+- ✅ Responsive design for all devices
 
 ## 📚 Available Scripts
 
