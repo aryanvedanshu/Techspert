@@ -79,45 +79,60 @@ techspert/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
+- Node.js 18+ and npm (for local development)
+- Docker and Docker Compose (for containerized deployment)
 - Git
 
-### 1. Clone and Setup
+### Option 1: Docker Deployment (Recommended)
 ```bash
-git clone <repository-url>
-cd techspert
-```
+# 1. Clone the repository
+git clone https://github.com/aryanvedanshu/Techspert.git
+cd Techspert
 
-### 2. Environment Configuration
-```bash
-# Copy environment template
+# 2. Copy environment template
 cp env.example .env
 
-# The .env file is already configured for local development
-# No additional setup required!
+# 3. Start all services with Docker
+docker compose up --build
+
+# 4. Access the application
+# Main App: http://localhost
+# Admin: http://localhost/admin
 ```
 
-### 3. Start the Application
+### Option 2: Local Development
 ```bash
-# Build and start all services
-docker-compose up --build
+# 1. Clone and setup
+git clone https://github.com/aryanvedanshu/Techspert.git
+cd Techspert
+cp env.example .env
 
-# Or run in detached mode
-docker-compose up --build -d
+# 2. Install dependencies
+cd server && npm install
+cd ../client && npm install
+
+# 3. Seed the database
+cd ../server && npm run seed
+
+# 4. Start servers (in separate terminals)
+# Terminal 1: Backend
+cd server && npm run dev
+
+# Terminal 2: Frontend  
+cd client && npm run dev
+
+# 5. Access the application
+# Frontend: http://localhost:5173
+# Backend: http://localhost:5000
+# Admin: http://localhost:5173/admin
 ```
 
-### 4. Access the Application
-- **Main Application**: http://localhost
-- **Admin Dashboard**: http://localhost/admin
-- **API Endpoints**: http://localhost/api
-- **Health Check**: http://localhost/health
-
-### 5. Default Login Credentials
+### 🔐 Default Login Credentials
 - **Super Admin**: `super-admin@techspert.ai` / `Admin123`
 - **Student**: `john.doe@example.com` / `Student123`
 - **Instructor**: `jane.smith@example.com` / `Instructor123`
 
-### 6. What's Included
+### 📊 What's Included
 The system automatically seeds with:
 - ✅ 3 comprehensive courses (AI/ML, Data Science, MERN Stack)
 - ✅ 3 student projects with GitHub/demo links
@@ -125,6 +140,8 @@ The system automatically seeds with:
 - ✅ Complete admin dashboard with CRUD operations
 - ✅ Professional branding and splash animations
 - ✅ Responsive design for all devices
+- ✅ JWT authentication with refresh tokens
+- ✅ Role-based access control
 
 ## 📚 Available Scripts
 
@@ -224,6 +241,20 @@ docker-compose up -d --scale backend=3
 - Activity tracking
 
 ### API Endpoints
+
+#### Authentication Endpoints
+```
+POST /api/auth/register         # User registration
+POST /api/auth/login           # User login
+POST /api/auth/refresh         # Refresh access token
+POST /api/auth/logout          # User logout
+GET  /api/auth/me              # Get current user profile
+PUT  /api/auth/profile         # Update user profile
+PUT  /api/auth/change-password # Change password
+POST /api/auth/forgot-password # Request password reset
+POST /api/auth/reset-password  # Reset password
+POST /api/auth/verify-email    # Verify email address
+```
 
 #### Public Endpoints
 ```
@@ -354,28 +385,55 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Email**: contact@techspert.com
 - **Discord**: Join our community server
 
+## 🆕 Latest Features
+
+### Authentication & User Management
+- ✅ **JWT Authentication** with access and refresh tokens
+- ✅ **Role-based Access Control** (Student, Instructor, Admin)
+- ✅ **User Registration & Login** with email verification
+- ✅ **Password Reset** functionality
+- ✅ **Account Security** with login attempt lockout
+- ✅ **Profile Management** with social links
+
+### Docker & Deployment
+- ✅ **Complete Docker Orchestration** with 4 services
+- ✅ **Nginx Reverse Proxy** for professional hosting simulation
+- ✅ **Auto-seeding** with sample data on startup
+- ✅ **Health Checks** and auto-restart policies
+- ✅ **Production-ready** configuration
+
+### Enhanced UI/UX
+- ✅ **Professional Splash Screen** with branded animations
+- ✅ **Toast Notifications** with Sonner
+- ✅ **Responsive Design** for all devices
+- ✅ **Modern Animations** with Framer Motion
+- ✅ **Enhanced Admin Dashboard** with full CRUD operations
+
 ## 🎯 Roadmap
 
-### Phase 1 (Current)
+### Phase 1 (Completed ✅)
 - ✅ Core platform functionality
 - ✅ Admin dashboard
 - ✅ Course management
 - ✅ Project showcase
 - ✅ Alumni network
+- ✅ User authentication system
+- ✅ Docker deployment
+- ✅ Professional UI/UX
 
-### Phase 2 (Planned)
-- 🔄 User registration and profiles
+### Phase 2 (In Progress 🔄)
 - 🔄 Course enrollment system
 - 🔄 Progress tracking
 - 🔄 Discussion forums
+- 🔄 Payment integration
 - 🔄 Mobile app
 
-### Phase 3 (Future)
-- 🔄 Live streaming integration
-- 🔄 AI-powered recommendations
-- 🔄 Advanced analytics
-- 🔄 Multi-language support
-- 🔄 Enterprise features
+### Phase 3 (Future 🔮)
+- 🔮 Live streaming integration
+- 🔮 AI-powered recommendations
+- 🔮 Advanced analytics
+- 🔮 Multi-language support
+- 🔮 Enterprise features
 
 ## 🙏 Acknowledgments
 
