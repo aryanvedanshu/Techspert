@@ -84,9 +84,13 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'Login successful',
-    token,
-    refreshToken,
-    user: adminData,
+    data: {
+      user: adminData,
+      tokens: {
+        accessToken: token,
+        refreshToken: refreshToken,
+      },
+    },
   })
 })
 
