@@ -1,0 +1,608 @@
+# Cursor AI Rules for Techspert MERN Stack Educational Platform
+
+## Business Context & Platform Overview
+
+### Techspert - Live Learning Marketplace Platform
+- **Platform Type**: MERN stack live-learning marketplace where instructors sell live courses via Zoom/Google Meet
+- **Target Users**: Students, instructors, and administrators in technology education
+- **Core Focus**: Live course delivery, real-time analytics, student progress tracking, and comprehensive learning management
+- **Product Range**: Technology courses (AI, Data Science, MERN Stack, Python, Cloud Computing), live sessions, recordings, and certifications
+- **Key Features**: 
+  - Live online classes via Zoom/Google Meet integration
+  - Full admin-controlled CMS for total website management
+  - Multiple instructor support with individual dashboards
+  - Real-time analytics and student progress tracking
+  - Payment processing and instructor payouts
+  - Session scheduling and recording management
+
+### User Roles & Permissions
+- **Super Admin**: Full platform management, all content control, user management, system settings, instructor approval
+- **Admin**: Content management, course oversight, user support, analytics access, payment management
+- **Manager**: Course management, team coordination, limited admin functions, instructor support
+- **Moderator**: Content moderation, user support, basic management tasks
+- **Instructor**: Course creation, live session management, student progress tracking, earnings dashboard, Zoom/Meet integration
+- **Student**: Course enrollment, live session access, progress tracking, certificate downloads, payment management
+
+### Key Platform Features
+- **Live Learning Management**: Zoom/Google Meet integration for live online classes
+- **Dynamic Content Management**: All content stored in MongoDB and manageable via admin panel
+- **Course Management**: Comprehensive course delivery with modules, syllabus, and progress tracking
+- **Project Showcases**: Student project galleries with detailed descriptions and technologies
+- **Alumni Network**: Success stories and career progression tracking
+- **Certificate System**: Automated certificate generation and download
+- **Admin Panel**: Complete CRUD operations for all content types with WYSIWYG editor
+- **Multi-Instructor Support**: Individual instructor dashboards and course management
+- **Payment Processing**: Stripe integration with instructor payouts and marketplace features
+- **Real-time Analytics**: Student progress tracking, session analytics, and revenue reporting
+- **Session Management**: Scheduling, recording consent, and session replay capabilities
+- **Authentication**: Secure JWT-based authentication with role-based access control
+
+### Development Guidelines
+- **Live Learning Focus**: All features must enhance the live learning experience and educational outcomes
+- **Dynamic Content**: Prioritize database-driven content over static implementations
+- **Admin Control**: Ensure all content is manageable through the admin interface with real-time updates
+- **Multi-Instructor Support**: Design for scalable instructor onboarding and management
+- **Payment Integration**: Seamless payment processing with instructor payouts and marketplace features
+- **Real-time Features**: WebSocket integration for live sessions, chat, and real-time updates
+- **Responsive Design**: Mobile-first approach for accessibility across all devices
+- **Performance**: Optimize for fast loading and smooth user experience during live sessions
+- **Security**: Implement proper authentication, authorization, and data validation with PCI compliance
+- **Scalability**: Design for high-traffic live sessions and concurrent users
+
+## Tech Stack & Architecture
+
+### Frontend (React + Vite)
+- **Framework**: React 18 with functional components and hooks
+- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Tailwind CSS with custom design system
+- **Icons**: Lucide React for consistent iconography
+- **Animations**: Framer Motion for smooth transitions
+- **State Management**: React Context API and local state (consider Zustand for complex state)
+- **HTTP Client**: Axios with interceptors for API communication
+- **Real-time**: Socket.io client for live session features
+- **Payment**: Stripe Elements for secure payment processing
+- **Video Integration**: Zoom/Google Meet SDK integration
+
+### Backend (Node.js + Express)
+- **Runtime**: Node.js with ES6+ modules
+- **Framework**: Express.js with middleware architecture
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT tokens with refresh token mechanism and OAuth for Google/Zoom
+- **Security**: Helmet, CORS, rate limiting, bcrypt password hashing, PCI compliance
+- **File Upload**: Multer for handling file uploads
+- **Validation**: Mongoose schema validation and custom middleware
+- **Real-time**: Socket.io for live session features and real-time updates
+- **Payment**: Stripe integration with webhook handling and instructor payouts
+- **Video Integration**: Zoom/Google Meet API integration with webhook processing
+- **Background Jobs**: Bull/Agenda for scheduled tasks and email processing
+- **Caching**: Redis for session management and performance optimization
+
+### Database Models
+- **Course**: Course information with syllabus, modules, and live session details
+- **Project**: Student project submissions with technologies and descriptions
+- **Alumni**: Alumni profiles and career achievements
+- **Admin**: Admin user management with role-based permissions
+- **Instructor**: Instructor profiles with Zoom/Meet credentials and earnings
+- **Student**: Student profiles with enrollment and progress tracking
+- **Session**: Live session management with Zoom/Meet integration
+- **Enrollment**: Student course enrollments with payment and progress data
+- **Payment**: Payment transactions and instructor payouts
+- **Team**: Team member/instructor profiles
+- **Feature**: Website features and benefits
+- **Statistic**: Website statistics and metrics
+- **FAQ**: Frequently asked questions
+- **PageContent**: General page-specific content
+- **ContactInfo**: Contact information and details
+- **Footer**: Footer navigation and links
+- **SiteSettings**: Global site configuration
+- **Analytics**: Session analytics and user engagement data
+
+## UI Component Guidelines
+
+### Design System Foundation
+- **ALWAYS** use Tailwind CSS with consistent design tokens
+- **ALWAYS** follow the established color palette and typography system
+- **MAINTAIN** consistency with the educational platform aesthetic
+- **PRIORITIZE** accessibility and responsive design
+
+### Color Usage Rules
+- **PRIMARY ACTIONS**: Use primary colors for main CTAs and important actions
+- **SECONDARY ACTIONS**: Use secondary colors for secondary actions
+- **SUCCESS STATES**: Use green variants for success messages and completed states
+- **WARNING STATES**: Use yellow/orange variants for warnings and pending states
+- **ERROR STATES**: Use red variants for errors and critical actions
+- **NEUTRAL COLORS**: Use neutral grays for text hierarchy and backgrounds
+
+### Typography Rules
+- **HEADINGS**: Use consistent heading hierarchy (h1-h6) with proper font weights
+- **BODY TEXT**: Use readable font sizes and line heights for content
+- **CODE**: Use monospace fonts for code snippets and technical content
+- **PRICES**: Use prominent typography for course pricing and enrollment
+- **AVOID** inconsistent font sizes and weights
+
+### Component Rules
+- **BUTTONS**: Use consistent button styles with proper hover and focus states
+- **CARDS**: Use card components for course listings, project showcases, and content blocks
+- **FORMS**: Use consistent form styling with proper validation states
+- **MODALS**: Use modal components for confirmations and detailed views
+- **NAVIGATION**: Maintain consistent navigation patterns across all pages
+- **LOADING STATES**: Always show loading indicators for async operations
+
+### Educational-Specific Component Guidelines
+- **COURSE CARDS**: Emphasize course duration, difficulty, and key learning outcomes
+- **PROJECT SHOWCASES**: Highlight technologies used, project complexity, and student achievements
+- **ALUMNI PROFILES**: Showcase career progression and success stories
+- **CERTIFICATE DISPLAY**: Use the actual certificate image for authenticity
+- **PROGRESS INDICATORS**: Show learning progress and completion status
+- **INTERACTIVE ELEMENTS**: Make learning engaging with interactive components
+
+### Responsive Design Rules
+- **MOBILE FIRST**: Design for mobile devices first, then enhance for larger screens
+- **BREAKPOINTS**: Use Tailwind's responsive breakpoints (sm, md, lg, xl, 2xl)
+- **TOUCH TARGETS**: Ensure minimum 44px touch targets for mobile interactions
+- **READABLE CONTENT**: Maintain readability across all device sizes
+- **NAVIGATION**: Ensure navigation works well on all screen sizes
+
+### Accessibility Rules
+- **FOCUS STATES**: Provide clear focus indicators for keyboard navigation
+- **COLOR CONTRAST**: Maintain minimum 4.5:1 contrast ratio for text
+- **SCREEN READERS**: Use semantic HTML and descriptive alt text
+- **KEYBOARD NAVIGATION**: Ensure all interactive elements are keyboard accessible
+- **ARIA LABELS**: Use proper ARIA labels for complex interactions
+
+## Code Generation Rules
+
+### React Component Guidelines
+- **FUNCTIONAL COMPONENTS**: Use functional components with hooks
+- **PROPER IMPORTS**: Import only necessary dependencies
+- **ERROR BOUNDARIES**: Implement error boundaries for robust error handling
+- **LOADING STATES**: Always handle loading and error states
+- **PROP VALIDATION**: Use PropTypes or TypeScript for prop validation
+- **PERFORMANCE**: Use React.memo and useMemo for performance optimization
+
+### API Integration Rules
+- **AXIOS INTERCEPTORS**: Use the established API service with interceptors
+- **ERROR HANDLING**: Implement comprehensive error handling for API calls
+- **LOADING STATES**: Show loading indicators during API operations
+- **DATA VALIDATION**: Validate API responses before using data
+- **CACHING**: Implement appropriate caching strategies
+
+### Database Integration Rules
+- **MONGOOSE SCHEMAS**: Use proper Mongoose schemas with validation
+- **ASYNC/AWAIT**: Use async/await for all database operations
+- **ERROR HANDLING**: Implement proper error handling for database operations
+- **INDEXES**: Use appropriate database indexes for performance
+- **RELATIONSHIPS**: Define proper relationships between models
+
+### Security Rules
+- **AUTHENTICATION**: Always verify authentication for protected routes
+- **AUTHORIZATION**: Check user permissions before allowing actions
+- **INPUT VALIDATION**: Validate and sanitize all user inputs
+- **PASSWORD SECURITY**: Use bcrypt for password hashing
+- **JWT TOKENS**: Implement proper JWT token management
+- **RATE LIMITING**: Use rate limiting for API endpoints
+
+## Logging & Debugging Guidelines
+
+### Structured Logging
+- **FORMAT**: Use `[DEBUG: filename.js:function:line] Description: data` format
+- **FUNCTION ENTRY**: Log function entry points with parameters
+- **DATABASE OPERATIONS**: Log all database queries and results
+- **API CALLS**: Log all API requests and responses
+- **ERROR HANDLING**: Log all errors with context information
+- **STATE CHANGES**: Log important state changes in React components
+
+### Debugging Best Practices
+- **CONSOLE LOGS**: Use structured console logging for debugging
+- **ERROR TRACKING**: Implement comprehensive error tracking
+- **PERFORMANCE MONITORING**: Monitor API response times and component renders
+- **USER INTERACTIONS**: Log important user interactions for debugging
+
+## Quality Review Process
+
+### Pre-Commit Review Requirements
+- **ALWAYS** test functionality before committing changes
+- **ALWAYS** verify responsive design across devices
+- **ALWAYS** check for console errors and warnings
+- **ALWAYS** ensure proper error handling is implemented
+- **ALWAYS** verify admin panel functionality for content management
+
+### Review Checklist (Must Verify Before Each Commit)
+1. **🎨 Visual Design Standards:**
+   - [ ] Consistent design system applied
+   - [ ] Proper color usage and typography
+   - [ ] Responsive design across all breakpoints
+   - [ ] Accessibility standards met
+
+2. **📱 Responsive Design:**
+   - [ ] Mobile-first approach implemented
+   - [ ] Proper breakpoints used
+   - [ ] Touch targets minimum 44px
+   - [ ] Content readable on all devices
+
+3. **♿ Accessibility:**
+   - [ ] Proper ARIA labels and semantic HTML
+   - [ ] Keyboard navigation support
+   - [ ] Color contrast meets WCAG AA standards
+   - [ ] Screen reader friendly
+
+4. **🎯 Educational Focus:**
+   - [ ] Enhances learning experience
+   - [ ] Clear course and project information
+   - [ ] Proper certificate display
+   - [ ] Admin content management working
+
+5. **🔧 Technical Quality:**
+   - [ ] No console errors or warnings
+   - [ ] Proper error handling implemented
+   - [ ] Clean, maintainable code
+   - [ ] Follows established patterns
+   - [ ] Comprehensive logging added
+
+6. **🔒 Security:**
+   - [ ] Proper authentication checks
+   - [ ] Input validation implemented
+   - [ ] Protected routes secured
+   - [ ] No sensitive data exposed
+
+### Review Request Format
+```
+🔍 **REVIEW REQUEST: [Component/Feature Name]**
+
+**📸 Testing Required:**
+- Please test the functionality in browser
+- Check responsive design on different devices
+- Verify admin panel functionality if applicable
+
+**🔧 Code Changes Summary:**
+- [Brief description of changes]
+- [Key code snippets]
+- [Database changes if any]
+
+**✅ Review Checklist:**
+- [ ] Design System Applied
+- [ ] Responsive Design
+- [ ] Accessibility Standards
+- [ ] Educational Focus Maintained
+- [ ] Technical Quality
+- [ ] Security Standards
+
+**🚀 Ready to Commit?**
+Please review and approve before I commit these changes.
+```
+
+## File-Specific Rules
+
+### Critical Files to Preserve
+- **Admin Authentication**: Preserve the existing admin login system
+- **Dynamic Content**: Maintain database-driven content loading
+- **API Service**: Keep the established API service with interceptors
+- **Error Handling**: Maintain comprehensive error handling
+- **Logging System**: Preserve the structured logging implementation
+
+### Component-Specific Guidelines
+- **Home.jsx**: Maintain dynamic content loading from database
+- **Footer.jsx**: Keep dynamic footer with database integration
+- **Admin Components**: Preserve admin panel functionality
+- **Certificate Components**: Use actual certificate images
+- **Course Components**: Maintain course data from database
+
+## General Guidelines
+- **ALWAYS** check existing implementations before suggesting changes
+- **PRESERVE** dynamic content management and admin panel functionality
+- **MAINTAIN** the comprehensive logging system
+- **ENSURE** all content is manageable through the admin interface
+- **FOLLOW** the established MERN stack patterns
+- **PRIORITIZE** educational platform requirements
+- **IMPLEMENT** proper error handling and loading states
+- **USE** the established design system and component patterns
+
+## Developer Assistance Communication Protocol
+
+### Clear Communication Requirements
+- **ALWAYS** clearly indicate when developer assistance is needed
+- **ALWAYS** distinguish between automated tasks and manual tasks
+- **ALWAYS** provide clear, actionable instructions for manual tasks
+
+### Communication Format Standards
+
+#### For Automated Tasks (Cursor Can Do):
+```
+✅ I can do this automatically:
+- Generate React components
+- Create API endpoints and controllers
+- Implement database models and schemas
+- Add comprehensive logging
+- Update existing components
+- Create admin panel functionality
+```
+
+#### For Manual Tasks (Developer Assistance Required):
+```
+⚠️ DEVELOPER ASSISTANCE NEEDED:
+- You need to install MongoDB and start the service
+- You need to run `npm run seed` to populate the database
+- You need to start both client and server development servers
+- You need to test the functionality in your browser
+- You need to verify admin panel access and functionality
+```
+
+### Tasks Requiring Developer Assistance
+- **Database Setup**: Installing and starting MongoDB
+- **Environment Configuration**: Setting up environment variables
+- **Service Management**: Starting development servers
+- **Testing**: Manual testing of functionality
+- **Deployment**: Production deployment and configuration
+
+## Git Push Rule - CRITICAL
+
+### 🚫 STRICT GIT PUSH RULE
+- **NEVER** use `git push` without explicit user permission
+- **NEVER** push to remote repository without user saying "push" or "push now"
+- **ONLY** use: `git add`, `git commit`, `git status`, `git log`, `git fetch`, `git pull`
+- **ALWAYS** wait for user to explicitly say "push" before pushing any commits
+- **THIS RULE APPLIES TO ALL AI ASSISTANTS** working on this project
+
+### Git Workflow
+1. Make code changes
+2. `git add .` to stage changes
+3. `git commit -m "message"` to commit locally
+4. **WAIT for explicit user permission** before pushing
+5. Only push when user says "push", "push now", "go ahead and push", etc.
+
+### ⚠️ IMPORTANT
+- This rule must be followed in ALL conversations
+- User must explicitly grant permission for each push
+- No exceptions - even if changes are complete or tested
+- If you forget this rule, user will remind you
+
+## Project-Specific Commands
+
+### Development Commands
+```bash
+# Install dependencies
+npm install
+
+# Start development servers
+npm run dev          # Frontend (Vite)
+npm run dev:server   # Backend (Nodemon)
+
+# Database operations
+npm run seed        # Seed database with demo data
+
+# Build for production
+npm run build        # Frontend
+npm start           # Backend
+```
+
+### Environment Variables
+```env
+# Database
+MONGO_URI=mongodb://localhost:27017/techspert
+
+# JWT
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=7d
+JWT_REFRESH_SECRET=your_refresh_secret
+
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Client
+VITE_API_URL=http://localhost:5000/api
+```
+
+## Success Metrics
+- **Dynamic Content**: All content loaded from database
+- **Admin Control**: Full content management through admin panel
+- **User Experience**: Smooth, responsive, and accessible interface
+- **Performance**: Fast loading times and efficient operations
+- **Security**: Proper authentication and data protection
+- **Maintainability**: Clean, well-documented, and structured code
+- **Live Learning**: Seamless live session experience with high reliability
+- **Payment Processing**: Secure and efficient payment handling with instructor payouts
+- **Real-time Analytics**: Comprehensive tracking and reporting capabilities
+
+## AI Coding Guidelines & Behavioral Rules
+
+### Code Quality Standards
+- **ALWAYS** write clean, modular, reusable, and well-commented code
+- **NEVER** leave incomplete or placeholder code
+- **ALWAYS** validate, test, and document before moving to next step
+- **USE** MVC pattern for backend, atomic design for frontend
+- **MAINTAIN** separate directories with clear structure
+- **ENFORCE** consistency in file naming and component structure
+- **USE** `.env` files for secrets, never hardcode keys
+
+### Commit Standards
+- **FORMAT**: `<scope>: <short-description> (why)`
+- **EXAMPLES**: 
+  - `auth: add refresh token rotation for security`
+  - `payments: add idempotency keys for webhook handling`
+  - `live-sessions: implement Zoom webhook validation`
+- **SIZE**: Small, focused commits with descriptive messages
+- **REQUIREMENTS**: Include tests, documentation, and example usage
+
+### API Development Standards
+- **GENERATE** for every new endpoint:
+  - Route file with proper middleware
+  - Controller function with validation
+  - Service function containing business logic
+  - Model updates if needed
+  - Unit tests and integration tests
+  - Example frontend service call
+  - JSDoc documentation
+- **PREFER** explicit API contracts (OpenAPI/Swagger)
+- **INCLUDE** accessibility attributes and keyboard interactions
+- **VALIDATE** both client-side and server-side
+
+## Live Learning & Video Integration Rules
+
+### Zoom/Google Meet Integration
+- **ADAPTER PATTERN**: Implement provider adapter interface with methods:
+  - `createMeeting`, `getJoinUrl`, `revokeMeeting`, `listRecordings`, `webhookHandler`
+- **ZOOM INTEGRATION**:
+  - Use OAuth app credentials (never commit client_secret)
+  - Implement webhook validation using signature headers
+  - Handle rate limits and token refresh
+  - Persist meeting IDs and join URLs
+- **GOOGLE MEET INTEGRATION**:
+  - Use Google Calendar API for events and conferenceData
+  - Follow principle of least privilege for scopes
+  - OAuth integration for calendar access
+- **SESSION SECURITY**:
+  - Store join URLs salted and time-bound
+  - Generate ephemeral join tokens for attendees
+  - Implement recording consent flows
+  - Validate webhook signatures and handle idempotency
+
+### Live Session Management
+- **SCHEDULING**: Store times in UTC, display localized times
+- **JOINING UX**: Clear CTAs with fallback instructions
+- **RECORDING**: Explicit consent dialogs with region-based policies
+- **WEBHOOKS**: Validate signatures, process idempotently, handle retries
+- **RELIABILITY**: Queue meeting creation, add retries and backoff
+
+## Payment & Commerce Rules
+
+### Stripe Integration
+- **PAYMENT FLOWS**: Support one-off purchases, coupons, refunds, partial refunds
+- **MARKETPLACE**: Use Stripe Connect for instructor payouts
+- **WEBHOOKS**: Validate signatures, process idempotently, create audit trails
+- **DISPUTES**: Admin flows for manual dispute handling with evidence upload
+- **INVOICING**: Generate and store invoices for buyers
+- **SECURITY**: PCI compliance, never store card data
+
+### Payment Security
+- **IDEMPOTENCY**: Use idempotency keys for all payment operations
+- **VALIDATION**: Validate all payment webhooks and responses
+- **AUDIT**: Maintain complete audit trails for all transactions
+- **TESTING**: Use Stripe test mode for all development
+
+## Security & Privacy Rules
+
+### Authentication & Authorization
+- **JWT TOKENS**: Short-lived tokens with refresh token rotation
+- **OAUTH**: Support Google login for Meet integration
+- **RBAC**: Roles = [student, instructor, admin, support]
+- **MIDDLEWARE**: Enforce role-based access and resource ownership
+- **SESSION MANAGEMENT**: Secure cookies, httpOnly, sameSite
+
+### Data Protection
+- **INPUT VALIDATION**: Validate and sanitize all inputs server-side
+- **XSS/CSRF PREVENTION**: Proper escaping, CSP headers, anti-CSRF tokens
+- **SECRETS MANAGEMENT**: Use secrets manager for production
+- **RATE LIMITING**: Rate-limit auth endpoints and sensitive APIs
+- **ENCRYPTION**: Encryption at rest for sensitive fields
+- **GDPR COMPLIANCE**: Data retention policies and user data export/deletion
+
+### Logging & Monitoring
+- **STRUCTURED LOGGING**: Use `[TS-LOG]` prefix for all logs
+- **NO PII**: Never log full tokens or personal information
+- **CORRELATION**: Include requestId for tracing
+- **MONITORING**: Integrate Sentry for errors, APM for metrics
+
+## Testing & Quality Assurance
+
+### Testing Requirements
+- **UNIT TESTS**: Jest for backend and frontend
+- **INTEGRATION TESTS**: Supertest for Express routes
+- **COMPONENT TESTS**: React Testing Library with accessibility testing
+- **E2E TESTS**: Playwright for critical user flows
+- **COVERAGE**: Maintain >= 70% coverage on critical modules
+- **MOCKING**: Use fixtures and mocking for external services
+
+### Test Naming & Structure
+- **NAMING**: Clear test names describing behavior: "should ... when ..."
+- **STRUCTURE**: Arrange, Act, Assert pattern
+- **ISOLATION**: Each test should be independent
+- **DATA**: Use test fixtures and cleanup after tests
+
+## Top 30 Real-World Problems & Mitigation
+
+### Critical Issues to Prevent
+1. **Session scheduling & timezone errors** → Store UTC, display localized, confirm timezone
+2. **Zoom/Meet link reliability** → Persist metadata, generate ephemeral tokens, add retries
+3. **Payment complexity** → Use robust gateway, idempotency keys, clear policies
+4. **Webhook reliability** → Signature validation, idempotency, deduplication
+5. **Security & data leakage** → Secrets manager, strict gitignore, mask logs
+6. **Scale during peak sessions** → Autoscaling, pre-warm caches, CDN
+7. **Auth/authorization bugs** → Robust RBAC, ownership checks, short TTLs
+8. **Recording consent issues** → Explicit dialogs, region-based policies
+9. **Poor join UX** → Clear buttons, fallback instructions, browser testing
+10. **Refund abuse** → Time-bound windows, usage analytics, manual review
+
+### Additional Critical Issues
+11. **Instructor verification** → KYC checks, manual vetting, ratings
+12. **Payment disputes** → Evidence collection, clear receipts, support
+13. **Data consistency** → Atomic operations, transactions, optimistic locking
+14. **Seating limits** → Atomic decrements, database uniqueness, reservations
+15. **API rate limits** → Respect headers, exponential backoff, queuing
+16. **Dependency conflicts** → Lockfiles, automated tests, scheduled updates
+17. **Cross-browser issues** → Cross-browser testing, a11y audits
+18. **Email deliverability** → Verified domains, SPF/DKIM/DMARC
+19. **Session debugging** → Structured logs, session replays, requestId tracing
+20. **Websocket scaling** → Managed services, sticky sessions
+
+### Performance & Operational Issues
+21. **Accessibility gaps** → Auto-captions, transcripts, contrast compliance
+22. **Content moderation** → DMCA flows, content policy, reporting
+23. **Legal compliance** → Localization, tax handling, legal counsel
+24. **Flaky tests** → Stabilize tests, mock services, avoid timing asserts
+25. **User churn** → Simplify onboarding, quick tours, free trials
+26. **Search relevancy** → Search indexing, faceted search, analytics ranking
+27. **Support overhead** → Automate flows, admin tools, SLA tracking
+28. **Account takeover** → MFA, rate-limiting, device fingerprinting
+29. **Storage costs** → Tiered storage, auto-expire, opt-in persistence
+30. **Observability gaps** → Load testing, chaos experiments, runbooks
+
+## Documentation & Maintenance
+
+### Documentation Standards
+- **README**: Quick-start, env variables, architecture, testing, deployment
+- **API DOCS**: OpenAPI/Swagger for public endpoints
+- **INLINE DOCS**: JSDoc for exported functions and services
+- **CHANGELOGS**: Keep-a-changelog style for releases
+- **DESIGN DOCS**: Complex features with sequence diagrams
+- **ONBOARDING**: CONTRIBUTING.md with commit rules and PR templates
+
+### Maintenance Rules
+- **MIGRATIONS**: Always create migration files for DB changes
+- **DEPRECATION**: Announce breaking changes with migration guides
+- **DATA RETENTION**: Implement GDPR deletion and export endpoints
+- **SUPPORT TOOLING**: Admin dashboard for refunds, queries, replays
+
+## Deployment & Infrastructure
+
+### Environment Management
+- **ENVIRONMENTS**: local, staging, production
+- **CONTAINERS**: Dockerfile for backend/frontend, docker-compose for local
+- **CI/CD**: GitHub Actions with lint → test → build → deploy pipeline
+- **MIGRATIONS**: Use migrate-mongo with up/down migrations
+- **BACKUPS**: Automated DB backups with retention policy
+- **ROLLBACK**: Blue/green or canary deployment strategy
+
+### Monitoring & Observability
+- **HEALTH CHECKS**: Expose health, readiness, liveness endpoints
+- **ERROR TRACKING**: Sentry integration for error monitoring
+- **METRICS**: Prometheus/Grafana or third-party APM
+- **LOGGING**: Structured JSON logs for production
+- **ALERTING**: Set up alerts for critical failures
+
+## Pre-Commit Verification
+
+### Mandatory Checks
+- **LINTING**: `npm run lint` passes
+- **TESTING**: `npm test` passes
+- **BUILDING**: `npm run build` succeeds
+- **SECURITY**: No secrets in commit (automated scan)
+- **DOCUMENTATION**: Environment variables documented
+- **MIGRATIONS**: Migration files included for DB changes
+
+### Code Quality Gates
+- **NO CONSOLE ERRORS**: All functionality tested
+- **ACCESSIBILITY**: WCAG 2.1 AA compliance
+- **PERFORMANCE**: Lighthouse scores meet standards
+- **SECURITY**: No vulnerabilities in dependencies
+- **COVERAGE**: Test coverage meets minimum thresholds
