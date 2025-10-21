@@ -1,37 +1,59 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Star, Users, Award, Code, Database, Brain, ExternalLink } from 'lucide-react'
+import { ArrowRight, Play, Star, Users, Award, Code, Database, Brain, ExternalLink, Target, TrendingUp, BookOpen, GraduationCap, Briefcase, DollarSign, Clock, CheckCircle, Heart, Globe, Zap, Shield, Smartphone, Laptop, Cloud, Lock } from 'lucide-react'
 import { api } from '../services/api'
 import CourseCard from '../components/CourseCard'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 
 const Home = () => {
+  console.log("[DEBUG: Home.jsx:component:10] Home component initializing")
+  
   const [courses, setCourses] = useState([])
   const [alumni, setAlumni] = useState([])
   const [siteSettings, setSiteSettings] = useState(null)
+  const [features, setFeatures] = useState([])
+  const [statistics, setStatistics] = useState([])
   const [loading, setLoading] = useState(true)
 
+  console.log("[DEBUG: Home.jsx:state:16] Initial state - loading:", loading)
+
   useEffect(() => {
+    console.log("[DEBUG: Home.jsx:useEffect:18] useEffect triggered - fetching data")
     const fetchData = async () => {
       try {
-        // Fetch courses, alumni, and site settings in parallel
-        const [coursesResponse, alumniResponse, settingsResponse] = await Promise.all([
+        console.log("[DEBUG: Home.jsx:fetchData:20] Starting parallel API calls")
+        // Fetch courses, alumni, site settings, features, and statistics in parallel
+        const [coursesResponse, alumniResponse, settingsResponse, featuresResponse, statisticsResponse] = await Promise.all([
           api.get('/courses?featured=true&limit=3'),
           api.get('/alumni?featured=true&limit=3'),
-          api.get('/settings')
+          api.get('/settings'),
+          api.get('/features?category=homepage&featured=true'),
+          api.get('/statistics?category=homepage&featured=true')
         ])
+        
+        console.log("[DEBUG: Home.jsx:fetchData:success:29] API calls completed successfully")
+        console.log("[DEBUG: Home.jsx:fetchData:data:30] Courses count:", coursesResponse.data.data?.length || 0)
+        console.log("[DEBUG: Home.jsx:fetchData:data:31] Alumni count:", alumniResponse.data.data?.length || 0)
+        console.log("[DEBUG: Home.jsx:fetchData:data:32] Features count:", featuresResponse.data.data?.length || 0)
+        console.log("[DEBUG: Home.jsx:fetchData:data:33] Statistics count:", statisticsResponse.data.data?.length || 0)
         
         setCourses(coursesResponse.data.data || [])
         setAlumni(alumniResponse.data.data || [])
         setSiteSettings(settingsResponse.data.data)
+        setFeatures(featuresResponse.data.data || [])
+        setStatistics(statisticsResponse.data.data || [])
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error("[DEBUG: Home.jsx:fetchData:error:36] Error fetching data:", error)
         // Set empty arrays on error to prevent crashes
+        console.log("[DEBUG: Home.jsx:fetchData:error:50] Setting empty arrays due to error")
         setCourses([])
         setAlumni([])
+        setFeatures([])
+        setStatistics([])
         // Set default settings if fetch fails
+        console.log("[DEBUG: Home.jsx:fetchData:error:55] Setting default site settings")
         setSiteSettings({
           homePage: {
             hero: {
@@ -50,6 +72,7 @@ const Home = () => {
           },
         })
       } finally {
+        console.log("[DEBUG: Home.jsx:fetchData:finally:75] Setting loading to false")
         setLoading(false)
       }
     }
@@ -57,33 +80,25 @@ const Home = () => {
     fetchData()
   }, [])
 
-  const stats = [
-    { label: 'Students', value: '10,000+', icon: Users },
-    { label: 'Courses', value: '50+', icon: Award },
-    { label: 'Success Rate', value: '95%', icon: Star },
-    { label: 'Projects', value: '200+', icon: Code },
-  ]
+  console.log("[DEBUG: Home.jsx:render:81] Component rendering - loading:", loading, "courses:", courses.length, "features:", features.length, "statistics:", statistics.length)
 
-  const features = [
-    {
-      icon: Brain,
-      title: 'AI & Machine Learning',
-      description: 'Master cutting-edge AI technologies with hands-on projects and real-world applications.',
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      icon: Database,
-      title: 'Data Science',
-      description: 'Learn data analysis, visualization, and machine learning with industry-standard tools.',
-      color: 'from-blue-500 to-cyan-500',
-    },
-    {
-      icon: Code,
-      title: 'MERN Stack',
-      description: 'Build full-stack applications with MongoDB, Express, React, and Node.js.',
-      color: 'from-green-500 to-emerald-500',
-    },
-  ]
+  // Dynamic stats from database
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      Users, Award, Star, Code, Target, TrendingUp, BookOpen, GraduationCap,
+      Briefcase, DollarSign, Clock, CheckCircle, Heart, Globe, Zap, Shield
+    }
+    return iconMap[iconName] || Users
+  }
+
+  // Dynamic features from database
+  const getFeatureIcon = (iconName) => {
+    const iconMap = {
+      Brain, Database, Code, Award, Users, Target, CheckCircle, Star,
+      Shield, Zap, Globe, Smartphone, Laptop, Cloud, Lock, Heart
+    }
+    return iconMap[iconName] || Code
+  }
 
   return (
     <div className="min-h-screen">
@@ -145,22 +160,39 @@ const Home = () => {
       {/* Stats Section */}
       <section className="py-16 bg-white">
         <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
+              {siteSettings?.homePage?.stats?.title || 'Our Impact'}
+            </h2>
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              {siteSettings?.homePage?.stats?.subtitle || 'Join thousands of successful graduates who have transformed their careers'}
+            </p>
+          </motion.div>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon
+            {statistics.map((stat, index) => {
+              const Icon = getIconComponent(stat.icon)
               return (
                 <motion.div
-                  key={stat.label}
+                  key={stat._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="text-center"
                 >
-                  <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className={`w-16 h-16 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                     <Icon size={24} className="text-white" />
                   </div>
                   <div className="text-3xl font-bold text-neutral-900 mb-2">{stat.value}</div>
                   <div className="text-neutral-600">{stat.label}</div>
+                  {stat.description && (
+                    <div className="text-sm text-neutral-500 mt-1">{stat.description}</div>
+                  )}
                 </motion.div>
               )
             })}
@@ -225,19 +257,19 @@ const Home = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
-              Why Choose Techspert?
+              {siteSettings?.homePage?.features?.title || 'Why Choose Techspert?'}
             </h2>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              We provide comprehensive learning experiences that prepare you for real-world challenges
+              {siteSettings?.homePage?.features?.subtitle || 'We provide comprehensive learning experiences that prepare you for real-world challenges'}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map((feature, index) => {
-              const Icon = feature.icon
+              const Icon = getFeatureIcon(feature.icon)
               return (
                 <motion.div
-                  key={feature.title}
+                  key={feature._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -252,6 +284,19 @@ const Home = () => {
                     <p className="text-neutral-600 leading-relaxed">
                       {feature.description}
                     </p>
+                    {feature.link && (
+                      <div className="mt-4">
+                        <a
+                          href={feature.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          Learn More
+                          <ExternalLink size={16} className="ml-1" />
+                        </a>
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
               )

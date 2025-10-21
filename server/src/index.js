@@ -15,17 +15,31 @@ import projectRoutes from './routes/projects.js'
 import alumniRoutes from './routes/alumni.js'
 import adminRoutes from './routes/admin.js'
 import settingsRoutes from './routes/settings.js'
+import teamRoutes from './routes/team.js'
+import featureRoutes from './routes/features.js'
+import statisticRoutes from './routes/statistics.js'
+import faqRoutes from './routes/faqs.js'
+import pageContentRoutes from './routes/pageContent.js'
+import contactInfoRoutes from './routes/contactInfo.js'
+import footerRoutes from './routes/footer.js'
+import certificateRoutes from './routes/certificates.js'
 
 // Load environment variables
 dotenv.config()
 
+console.log("[TS-LOG][STARTUP] Loading environment variables and initializing server")
+
 const app = express()
 const PORT = process.env.PORT || 5000
 
+console.log("[TS-LOG][CONFIG] Server configuration - PORT:", PORT, "NODE_ENV:", process.env.NODE_ENV)
+
 // Connect to MongoDB
+console.log("[TS-LOG][STARTUP] Connecting to MongoDB database")
 connectDB()
 
 // Security middleware
+console.log("[TS-LOG][MIDDLEWARE] Setting up security middleware (helmet, rate limiting, CORS)")
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -64,11 +78,13 @@ app.use(compression())
 app.use(morgan('combined'))
 
 // Body parsing middleware
+console.log("[TS-LOG][MIDDLEWARE] Setting up body parsing middleware")
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Health check endpoint
 app.get('/health', (req, res) => {
+  console.log("[DEBUG: index.js:health:83] Health check endpoint accessed")
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -78,12 +94,21 @@ app.get('/health', (req, res) => {
 })
 
 // API routes
+console.log("[TS-LOG][ROUTES] Setting up API routes")
 app.use('/api/auth', authRoutes)
 app.use('/api/courses', courseRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/alumni', alumniRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/settings', settingsRoutes)
+app.use('/api/team', teamRoutes)
+app.use('/api/features', featureRoutes)
+app.use('/api/statistics', statisticRoutes)
+app.use('/api/faqs', faqRoutes)
+app.use('/api/page-content', pageContentRoutes)
+app.use('/api/contact-info', contactInfoRoutes)
+app.use('/api/footer', footerRoutes)
+app.use('/api/certificates', certificateRoutes)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -97,6 +122,14 @@ app.get('/', (req, res) => {
       alumni: '/api/alumni',
       admin: '/api/admin',
       settings: '/api/settings',
+      team: '/api/team',
+      features: '/api/features',
+      statistics: '/api/statistics',
+      faqs: '/api/faqs',
+      pageContent: '/api/page-content',
+      contactInfo: '/api/contact-info',
+      footer: '/api/footer',
+      certificates: '/api/certificates',
       health: '/health',
     },
   })
@@ -104,6 +137,7 @@ app.get('/', (req, res) => {
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.log("[TS-LOG][ERROR] 404 error - Route not found:", req.originalUrl)
   res.status(404).json({
     success: false,
     message: 'Route not found',
@@ -112,9 +146,11 @@ app.use('*', (req, res) => {
 })
 
 // Error handling middleware (must be last)
+console.log("[TS-LOG][MIDDLEWARE] Setting up error handling middleware")
 app.use(errorHandler)
 
 // Start server
+console.log("[TS-LOG][STARTUP] Starting server on port:", PORT)
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Send, Clock, MessageCircle } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, Clock, MessageCircle, HelpCircle, Linkedin, Twitter } from 'lucide-react'
+import { api } from '../services/api'
 import Card from '../components/UI/Card'
 import Button from '../components/UI/Button'
 
@@ -12,6 +13,10 @@ const Contact = () => {
     message: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [contactInfo, setContactInfo] = useState([])
+  const [faqs, setFaqs] = useState([])
+  const [pageContent, setPageContent] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   const handleChange = (e) => {
     setFormData({
@@ -19,6 +24,30 @@ const Contact = () => {
       [e.target.name]: e.target.value,
     })
   }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [contactInfoResponse, faqsResponse, pageContentResponse] = await Promise.all([
+          api.get('/contact-info'),
+          api.get('/faqs?featured=true'),
+          api.get('/page-content/contact')
+        ])
+        
+        setContactInfo(contactInfoResponse.data.data || [])
+        setFaqs(faqsResponse.data.data || [])
+        setPageContent(pageContentResponse.data.data)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setContactInfo([])
+        setFaqs([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -32,45 +61,13 @@ const Contact = () => {
     }, 1000)
   }
 
-  const contactInfo = [
-    {
-      icon: Mail,
-      title: 'Email Us',
-      details: 'contact@techspert.com',
-      description: 'Send us an email anytime',
-    },
-    {
-      icon: Phone,
-      title: 'Call Us',
-      details: '+1 (555) 123-4567',
-      description: 'Mon-Fri from 9am to 6pm',
-    },
-    {
-      icon: MapPin,
-      title: 'Visit Us',
-      details: '123 Tech Street, San Francisco, CA',
-      description: 'Come say hello at our office',
-    },
-  ]
-
-  const faqs = [
-    {
-      question: 'How long are the courses?',
-      answer: 'Our courses range from 4-12 weeks depending on the complexity and depth of the subject matter.',
-    },
-    {
-      question: 'Do you offer certificates?',
-      answer: 'Yes! All our courses come with industry-recognized certificates upon completion.',
-    },
-    {
-      question: 'Can I get a refund?',
-      answer: 'We offer a 30-day money-back guarantee if you\'re not satisfied with your course.',
-    },
-    {
-      question: 'Do you provide job placement assistance?',
-      answer: 'Yes, we offer career guidance and job placement assistance to all our students.',
-    },
-  ]
+  // Dynamic icon mapping
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      Mail, Phone, MapPin, Clock, MessageCircle, HelpCircle, Linkedin, Twitter
+    }
+    return iconMap[iconName] || Mail
+  }
 
   return (
     <div className="min-h-screen">
@@ -98,10 +95,10 @@ const Contact = () => {
         <div className="container-custom">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {contactInfo.map((info, index) => {
-              const Icon = info.icon
+              const Icon = getIconComponent(info.icon)
               return (
                 <motion.div
-                  key={info.title}
+                  key={info._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -114,11 +111,27 @@ const Contact = () => {
                       {info.title}
                     </h3>
                     <p className="text-primary-600 font-medium mb-2">
-                      {info.details}
+                      {info.value}
                     </p>
-                    <p className="text-neutral-600 text-sm">
-                      {info.description}
-                    </p>
+                    {info.description && (
+                      <p className="text-neutral-600 text-sm">
+                        {info.description}
+                      </p>
+                    )}
+                    {info.link && (
+                      <div className="mt-4">
+                        <a
+                          href={info.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium text-sm"
+                        >
+                          {info.type === 'email' ? 'Send Email' : 
+                           info.type === 'phone' ? 'Call Now' : 
+                           info.type === 'address' ? 'Get Directions' : 'Visit'}
+                        </a>
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
               )
@@ -229,13 +242,25 @@ const Contact = () => {
                 </h2>
                 <div className="space-y-6">
                   {faqs.map((faq, index) => (
-                    <div key={index} className="border-b border-neutral-200 pb-6 last:border-b-0">
+                    <div key={faq._id} className="border-b border-neutral-200 pb-6 last:border-b-0">
                       <h3 className="text-lg font-semibold text-neutral-900 mb-2">
                         {faq.question}
                       </h3>
                       <p className="text-neutral-600 leading-relaxed">
                         {faq.answer}
                       </p>
+                      {faq.tags && faq.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {faq.tags.map((tag, tagIndex) => (
+                            <span
+                              key={tagIndex}
+                              className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-lg"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

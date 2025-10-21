@@ -18,6 +18,11 @@ import AdminCourses from './routes/Admin/AdminCourses'
 import AdminProjects from './routes/Admin/AdminProjects'
 import AdminAlumni from './routes/Admin/AdminAlumni'
 import AdminSettings from './routes/Admin/AdminSettings'
+import AdminTeam from './routes/Admin/AdminTeam'
+import AdminFeatures from './routes/Admin/AdminFeatures'
+import AdminStatistics from './routes/Admin/AdminStatistics'
+import AdminFAQs from './routes/Admin/AdminFAQs'
+import AdminContactInfo from './routes/Admin/AdminContactInfo'
 
 function App() {
   return (
@@ -41,6 +46,11 @@ function App() {
               <Route path="/admin/projects" element={<AdminProjects />} />
               <Route path="/admin/alumni" element={<AdminAlumni />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
+              <Route path="/admin/team" element={<AdminTeam />} />
+              <Route path="/admin/features" element={<AdminFeatures />} />
+              <Route path="/admin/statistics" element={<AdminStatistics />} />
+              <Route path="/admin/faqs" element={<AdminFAQs />} />
+              <Route path="/admin/contact-info" element={<AdminContactInfo />} />
             </Routes>
           </main>
           <Footer />

@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import { 
   Users, BookOpen, Code, Award, TrendingUp, Eye, Plus, Settings, 
   Palette, Mail, Globe, Shield, BarChart3, Clock, DollarSign, 
-  Star, Activity, AlertCircle, CheckCircle, XCircle, RefreshCw
+  Star, Activity, AlertCircle, CheckCircle, XCircle, RefreshCw,
+  UserCheck, HelpCircle, Phone, Target, Brain, Database
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
@@ -263,32 +264,46 @@ const AdminDashboard = () => {
 
   const contentManagementCards = [
     {
-      title: 'Theme & Branding',
-      description: 'Customize colors, logos, and visual identity',
-      icon: Palette,
-      link: '/admin/theme',
-      color: 'bg-pink-500',
+      title: 'Team Management',
+      description: 'Manage team members and instructors',
+      icon: UserCheck,
+      link: '/admin/team',
+      color: 'bg-blue-500',
     },
     {
-      title: 'Contact Settings',
-      description: 'Update contact information and email settings',
-      icon: Mail,
-      link: '/admin/contact',
+      title: 'Features',
+      description: 'Manage website features and highlights',
+      icon: Target,
+      link: '/admin/features',
+      color: 'bg-green-500',
+    },
+    {
+      title: 'Statistics',
+      description: 'Manage website statistics and metrics',
+      icon: BarChart3,
+      link: '/admin/statistics',
+      color: 'bg-purple-500',
+    },
+    {
+      title: 'FAQs',
+      description: 'Manage frequently asked questions',
+      icon: HelpCircle,
+      link: '/admin/faqs',
+      color: 'bg-orange-500',
+    },
+    {
+      title: 'Contact Info',
+      description: 'Manage contact information and social links',
+      icon: Phone,
+      link: '/admin/contact-info',
       color: 'bg-indigo-500',
     },
     {
-      title: 'Home Page Content',
-      description: 'Edit hero text, features, and homepage content',
-      icon: Globe,
-      link: '/admin/homepage',
-      color: 'bg-teal-500',
-    },
-    {
-      title: 'Security & Features',
-      description: 'Manage feature flags and security settings',
-      icon: Shield,
-      link: '/admin/security',
-      color: 'bg-red-500',
+      title: 'Site Settings',
+      description: 'Configure site settings and preferences',
+      icon: Settings,
+      link: '/admin/settings',
+      color: 'bg-gray-500',
     },
   ]
 

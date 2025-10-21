@@ -101,8 +101,7 @@ const adminSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Indexes
-adminSchema.index({ email: 1 })
+// Indexes (email already has unique index from schema definition)
 adminSchema.index({ role: 1 })
 adminSchema.index({ isActive: 1 })
 

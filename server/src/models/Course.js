@@ -148,8 +148,7 @@ const courseSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Indexes for better performance
-courseSchema.index({ slug: 1 })
+// Indexes for better performance (slug already has unique index from schema definition)
 courseSchema.index({ isPublished: 1, position: 1 })
 courseSchema.index({ level: 1 })
 courseSchema.index({ tags: 1 })

@@ -1,59 +1,51 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Award, Code, Target, CheckCircle, Star } from 'lucide-react'
+import { Users, Award, Code, Target, CheckCircle, Star, Linkedin, Github, Mail } from 'lucide-react'
+import { api } from '../services/api'
 import Card from '../components/UI/Card'
 import Button from '../components/UI/Button'
 
 const About = () => {
-  const stats = [
-    { label: 'Students Taught', value: '10,000+', icon: Users },
-    { label: 'Courses Available', value: '50+', icon: Award },
-    { label: 'Projects Completed', value: '200+', icon: Code },
-    { label: 'Success Rate', value: '95%', icon: Target },
-  ]
+  const [team, setTeam] = useState([])
+  const [features, setFeatures] = useState([])
+  const [statistics, setStatistics] = useState([])
+  const [pageContent, setPageContent] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const values = [
-    {
-      title: 'Quality Education',
-      description: 'We provide high-quality, industry-relevant courses designed by experts.',
-      icon: Award,
-    },
-    {
-      title: 'Hands-on Learning',
-      description: 'Learn by doing with real-world projects and practical exercises.',
-      icon: Code,
-    },
-    {
-      title: 'Expert Instructors',
-      description: 'Learn from industry professionals with years of experience.',
-      icon: Users,
-    },
-    {
-      title: 'Career Support',
-      description: 'Get help with job placement and career guidance.',
-      icon: Target,
-    },
-  ]
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [teamResponse, featuresResponse, statisticsResponse, pageContentResponse] = await Promise.all([
+          api.get('/team?featured=true'),
+          api.get('/features?category=about'),
+          api.get('/statistics?category=about'),
+          api.get('/page-content/about')
+        ])
+        
+        setTeam(teamResponse.data.data || [])
+        setFeatures(featuresResponse.data.data || [])
+        setStatistics(statisticsResponse.data.data || [])
+        setPageContent(pageContentResponse.data.data)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setTeam([])
+        setFeatures([])
+        setStatistics([])
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const team = [
-    {
-      name: 'Sarah Johnson',
-      role: 'CEO & Founder',
-      image: null,
-      bio: 'Former Google engineer with 10+ years in tech education.',
-    },
-    {
-      name: 'Michael Chen',
-      role: 'Head of AI',
-      image: null,
-      bio: 'PhD in Machine Learning, former Tesla AI researcher.',
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Lead Instructor',
-      image: null,
-      bio: 'Full-stack developer with expertise in MERN stack.',
-    },
-  ]
+    fetchData()
+  }, [])
+
+  // Dynamic icon mapping
+  const getIconComponent = (iconName) => {
+    const iconMap = {
+      Users, Award, Code, Target, CheckCircle, Star, Linkedin, Github, Mail
+    }
+    return iconMap[iconName] || Users
+  }
 
   return (
     <div className="min-h-screen">
@@ -81,21 +73,24 @@ const About = () => {
       <section className="py-16 bg-white">
         <div className="container-custom">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon
+            {statistics.map((stat, index) => {
+              const Icon = getIconComponent(stat.icon)
               return (
                 <motion.div
-                  key={stat.label}
+                  key={stat._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="text-center"
                 >
-                  <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className={`w-16 h-16 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
                     <Icon size={24} className="text-white" />
                   </div>
                   <div className="text-3xl font-bold text-neutral-900 mb-2">{stat.value}</div>
                   <div className="text-neutral-600">{stat.label}</div>
+                  {stat.description && (
+                    <div className="text-sm text-neutral-500 mt-1">{stat.description}</div>
+                  )}
                 </motion.div>
               )
             })}
@@ -158,32 +153,32 @@ const About = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
-              Our Values
+              {pageContent?.sections?.values?.title || 'Our Values'}
             </h2>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              The principles that guide everything we do
+              {pageContent?.sections?.values?.subtitle || 'The principles that guide everything we do'}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => {
-              const Icon = value.icon
+            {features.map((feature, index) => {
+              const Icon = getIconComponent(feature.icon)
               return (
                 <motion.div
-                  key={value.title}
+                  key={feature._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card className="text-center h-full">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
                       <Icon size={24} className="text-white" />
                     </div>
                     <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-4">
-                      {value.title}
+                      {feature.title}
                     </h3>
                     <p className="text-neutral-600 leading-relaxed">
-                      {value.description}
+                      {feature.description}
                     </p>
                   </Card>
                 </motion.div>
@@ -203,26 +198,26 @@ const About = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
-              Meet Our Team
+              {pageContent?.sections?.team?.title || 'Meet Our Team'}
             </h2>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              The experts behind your learning journey
+              {pageContent?.sections?.team?.subtitle || 'The experts behind your learning journey'}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, index) => (
               <motion.div
-                key={member.name}
+                key={member._id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
               >
                 <Card className="text-center">
                   <div className="w-24 h-24 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    {member.image ? (
+                    {member.imageUrl ? (
                       <img
-                        src={member.image}
+                        src={member.imageUrl}
                         alt={member.name}
                         className="w-full h-full object-cover rounded-full"
                       />
@@ -238,9 +233,46 @@ const About = () => {
                   <div className="text-primary-600 font-medium mb-4">
                     {member.role}
                   </div>
-                  <p className="text-neutral-600 leading-relaxed">
+                  {member.department && (
+                    <div className="text-neutral-500 text-sm mb-2">
+                      {member.department}
+                    </div>
+                  )}
+                  <p className="text-neutral-600 leading-relaxed mb-4">
                     {member.bio}
                   </p>
+                  
+                  {/* Social Links */}
+                  <div className="flex justify-center gap-3">
+                    {member.socialLinks?.linkedin && (
+                      <a
+                        href={member.socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
+                      >
+                        <Linkedin size={18} className="text-neutral-600 group-hover:text-primary-600" />
+                      </a>
+                    )}
+                    {member.socialLinks?.github && (
+                      <a
+                        href={member.socialLinks.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
+                      >
+                        <Github size={18} className="text-neutral-600 group-hover:text-primary-600" />
+                      </a>
+                    )}
+                    {member.email && (
+                      <a
+                        href={`mailto:${member.email}`}
+                        className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
+                      >
+                        <Mail size={18} className="text-neutral-600 group-hover:text-primary-600" />
+                      </a>
+                    )}
+                  </div>
                 </Card>
               </motion.div>
             ))}

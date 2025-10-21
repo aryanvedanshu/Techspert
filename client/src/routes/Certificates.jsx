@@ -10,14 +10,16 @@ const Certificates = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log("[DEBUG: Certificates.jsx:useEffect:12] Fetching certificates data")
     const fetchCertificates = async () => {
       try {
         const response = await api.get('/certificates')
+        console.log("[DEBUG: Certificates.jsx:fetchCertificates:success:15] Certificates data fetched successfully")
         // The server returns { success: true, data: certificates[] }
         const certificatesData = response.data.data || []
         setCertificates(certificatesData)
       } catch (error) {
-        console.error('Error fetching certificates:', error)
+        console.error("[DEBUG: Certificates.jsx:fetchCertificates:error:19] Error fetching certificates:", error)
         // Set empty array on error to prevent crashes
         setCertificates([])
       } finally {
@@ -29,15 +31,15 @@ const Certificates = () => {
   }, [])
 
   const handleDownload = (certificate) => {
+    console.log("[DEBUG: Certificates.jsx:handleDownload:33] Downloading certificate:", certificate)
     // In a real app, this would generate and download the PDF
-    console.log('Downloading certificate:', certificate)
     // For demo purposes, we'll just show an alert
     alert('Certificate download feature will be implemented with PDF generation')
   }
 
   const handlePreview = (certificate) => {
+    console.log("[DEBUG: Certificates.jsx:handlePreview:40] Previewing certificate:", certificate)
     // In a real app, this would open a modal with the certificate preview
-    console.log('Previewing certificate:', certificate)
     alert('Certificate preview feature will be implemented')
   }
 
@@ -114,11 +116,12 @@ const Certificates = () => {
                             loading="lazy"
                           />
                         ) : (
-                          <div className="text-center text-white">
-                            <Award size={48} className="mx-auto mb-4" />
-                            <div className="text-lg font-semibold">Certificate</div>
-                            <div className="text-sm opacity-80">{courseName}</div>
-                          </div>
+                          <img
+                            src="/images/certificate.png"
+                            alt={`${courseName} Certificate`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
                         )}
                       </div>
                       <div className="absolute top-4 right-4">
@@ -199,6 +202,27 @@ const Certificates = () => {
               <Button>
                 Browse Courses
               </Button>
+            </motion.div>
+          )}
+
+          {/* Demo Certificate */}
+          {certificates.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-center py-8"
+            >
+              <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-4">
+                Sample Certificate
+              </h3>
+              <div className="max-w-md mx-auto">
+                <img
+                  src="/images/certificate.png"
+                  alt="Sample Certificate"
+                  className="w-full h-auto rounded-2xl shadow-lg"
+                />
+              </div>
             </motion.div>
           )}
         </div>
