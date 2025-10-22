@@ -8,15 +8,12 @@ const Footer = () => {
   
   const currentYear = new Date().getFullYear()
   const [footerData, setFooterData] = useState(null)
+  const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Default fallback data
   const defaultNavigation = {
-    courses: [
-      { name: 'AI Course', href: '/courses/ai', isActive: true, order: 1 },
-      { name: 'Data Science', href: '/courses/data-science', isActive: true, order: 2 },
-      { name: 'MERN Stack', href: '/courses/mern', isActive: true, order: 3 },
-    ],
+    courses: [], // Will be populated from server
     resources: [
       { name: 'Projects', href: '/projects', isActive: true, order: 1 },
       { name: 'Certificates', href: '/certificates', isActive: true, order: 2 },
@@ -37,14 +34,33 @@ const Footer = () => {
   ]
 
   useEffect(() => {
-    console.log("[DEBUG: Footer.jsx:useEffect:35] Fetching footer data")
-    const fetchFooterData = async () => {
+    console.log("[DEBUG: Footer.jsx:useEffect:35] Fetching footer data and courses")
+    const fetchData = async () => {
       try {
-        const response = await api.get('/footer')
-        console.log("[DEBUG: Footer.jsx:fetchFooterData:success:38] Footer data fetched successfully")
-        setFooterData(response.data.data)
+        // Fetch both footer data and courses in parallel
+        const [footerResponse, coursesResponse] = await Promise.all([
+          api.get('/footer'),
+          api.get('/courses?limit=5&isPublished=true')
+        ])
+        
+        console.log("[DEBUG: Footer.jsx:fetchData:success:38] Footer data and courses fetched successfully")
+        
+        // Set footer data
+        setFooterData(footerResponse.data.data)
+        
+        // Transform courses data for footer navigation
+        const coursesData = coursesResponse.data.data || []
+        const transformedCourses = coursesData.map((course, index) => ({
+          name: course.title,
+          href: `/courses/${course.slug}`,
+          isActive: course.isPublished,
+          order: index + 1
+        }))
+        setCourses(transformedCourses)
+        
       } catch (error) {
-        console.error("[DEBUG: Footer.jsx:fetchFooterData:error:40] Error fetching footer data:", error)
+        console.error("[DEBUG: Footer.jsx:fetchData:error:40] Error fetching data:", error)
+        
         // Use default data on error
         setFooterData({
           brand: {
@@ -63,12 +79,15 @@ const Footer = () => {
             ]
           }
         })
+        
+        // Set empty courses array on error
+        setCourses([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchFooterData()
+    fetchData()
   }, [])
 
   // Icon mapping for dynamic icons
@@ -97,7 +116,11 @@ const Footer = () => {
     )
   }
 
-  const navigation = footerData?.navigation || defaultNavigation
+  // Use dynamic courses data or fallback to footer data or default
+  const navigation = {
+    ...(footerData?.navigation || defaultNavigation),
+    courses: courses.length > 0 ? courses : (footerData?.navigation?.courses || defaultNavigation.courses)
+  }
   const socialLinks = footerData?.socialLinks || defaultSocialLinks
   const brand = footerData?.brand || { name: 'Techspert', description: 'Empowering the next generation of developers with cutting-edge technology courses and hands-on projects.' }
   const legal = footerData?.legal || { copyright: 'Techspert. All rights reserved.', links: [] }

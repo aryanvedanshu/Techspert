@@ -23,6 +23,11 @@ import pageContentRoutes from './routes/pageContent.js'
 import contactInfoRoutes from './routes/contactInfo.js'
 import footerRoutes from './routes/footer.js'
 import certificateRoutes from './routes/certificates.js'
+import enrollmentRoutes from './routes/enrollments.js'
+import paymentRoutes from './routes/payments.js'
+import sessionRoutes from './routes/sessions.js'
+import analyticsRoutes from './routes/analytics.js'
+import userManagementRoutes from './routes/userManagement.js'
 
 // Load environment variables
 dotenv.config()
@@ -53,22 +58,51 @@ app.use(helmet({
   },
 }))
 
-// Rate limiting
+// Rate limiting - More lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs (increased for development)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health checks and in development
+    return req.path === '/health' || process.env.NODE_ENV === 'development'
+  }
 })
 app.use(limiter)
 
-// CORS configuration
+// CORS configuration - More permissive for development
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    // Allow localhost on any port for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true)
+    }
+    
+    // Allow specific origins
+    const allowedOrigins = [
+      process.env.CLIENT_URL || 'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ]
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true)
+    }
+    
+    callback(new Error('Not allowed by CORS'))
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }))
 
 // Compression middleware
@@ -109,6 +143,11 @@ app.use('/api/page-content', pageContentRoutes)
 app.use('/api/contact-info', contactInfoRoutes)
 app.use('/api/footer', footerRoutes)
 app.use('/api/certificates', certificateRoutes)
+app.use('/api/enrollments', enrollmentRoutes)
+app.use('/api/payments', paymentRoutes)
+app.use('/api/sessions', sessionRoutes)
+app.use('/api/admin/analytics', analyticsRoutes)
+app.use('/api/admin/users', userManagementRoutes)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -130,6 +169,11 @@ app.get('/', (req, res) => {
       contactInfo: '/api/contact-info',
       footer: '/api/footer',
       certificates: '/api/certificates',
+      enrollments: '/api/enrollments',
+      payments: '/api/payments',
+      sessions: '/api/sessions',
+      analytics: '/api/admin/analytics',
+      userManagement: '/api/admin/users',
       health: '/health',
     },
   })

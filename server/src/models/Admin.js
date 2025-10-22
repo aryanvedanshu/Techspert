@@ -101,13 +101,13 @@ const adminSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Indexes (email already has unique index from schema definition)
+// Indexes
 adminSchema.index({ role: 1 })
 adminSchema.index({ isActive: 1 })
 
-// Virtual for account lock status
+// Virtual for account lock status (DISABLED - no login attempt restrictions)
 adminSchema.virtual('isLocked').get(function() {
-  return !!(this.lockUntil && this.lockUntil > Date.now())
+  return false // Always return false - no account locking
 })
 
 // Ensure virtual fields are serialized
@@ -138,24 +138,10 @@ adminSchema.methods.comparePassword = async function(candidatePassword) {
   }
 }
 
-// Instance method to increment login attempts
+// Instance method to increment login attempts (DISABLED - no login attempt restrictions)
 adminSchema.methods.incLoginAttempts = function() {
-  // If we have a previous lock that has expired, restart at 1
-  if (this.lockUntil && this.lockUntil < Date.now()) {
-    return this.updateOne({
-      $unset: { lockUntil: 1 },
-      $set: { loginAttempts: 1 },
-    })
-  }
-
-  const updates = { $inc: { loginAttempts: 1 } }
-  
-  // Lock account after 5 failed attempts for 2 hours
-  if (this.loginAttempts + 1 >= 5 && !this.isLocked) {
-    updates.$set = { lockUntil: Date.now() + 2 * 60 * 60 * 1000 } // 2 hours
-  }
-
-  return this.updateOne(updates)
+  // Do nothing - login attempts are not tracked or restricted
+  return Promise.resolve()
 }
 
 // Instance method to reset login attempts

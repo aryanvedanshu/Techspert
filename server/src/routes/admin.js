@@ -12,7 +12,7 @@ import {
   deleteAdmin,
   getDashboardStats,
 } from '../controllers/adminController.js'
-import { authenticateToken, requireRole, loginRateLimit } from '../middleware/auth.js'
+import { authenticateAdmin, requireRole, loginRateLimit } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -21,7 +21,7 @@ router.post('/login', loginRateLimit, loginAdmin)
 router.post('/refresh', refreshToken)
 
 // Protected routes
-router.use(authenticateToken)
+router.use(authenticateAdmin)
 
 // Profile routes
 router.get('/profile', getProfile)

@@ -99,7 +99,7 @@ const certificateSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Indexes for better performance (certificateId and verificationCode already have unique indexes from schema definition)
+// Indexes for better performance
 certificateSchema.index({ studentEmail: 1 })
 certificateSchema.index({ course: 1 })
 certificateSchema.index({ student: 1 })

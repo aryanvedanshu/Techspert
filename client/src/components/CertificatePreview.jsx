@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Download, Eye, Award, CheckCircle } from 'lucide-react'
 import Card from './UI/Card'
 import Button from './UI/Button'
+import certificateImage from '../assets/images/certificate.png'
 
 const CertificatePreview = ({ certificate, index = 0 }) => {
   const {
@@ -43,11 +44,12 @@ const CertificatePreview = ({ certificate, index = 0 }) => {
                 loading="lazy"
               />
             ) : (
-              <div className="text-center text-white">
-                <Award size={48} className="mx-auto mb-4" />
-                <div className="text-lg font-semibold">Certificate</div>
-                <div className="text-sm opacity-80">{courseName}</div>
-              </div>
+              <img
+                src={certificateImage}
+                alt={`${courseName} Certificate`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
             )}
           </div>
           <div className="absolute top-4 right-4">

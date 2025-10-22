@@ -137,7 +137,7 @@ const pageContentSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Indexes for better performance (page already has unique index from schema definition)
+// Indexes for better performance
 pageContentSchema.index({ isActive: 1 })
 
 // Static method to get page content

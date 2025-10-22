@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -23,8 +24,18 @@ import AdminFeatures from './routes/Admin/AdminFeatures'
 import AdminStatistics from './routes/Admin/AdminStatistics'
 import AdminFAQs from './routes/Admin/AdminFAQs'
 import AdminContactInfo from './routes/Admin/AdminContactInfo'
+import AdminAnalytics from './routes/Admin/AdminAnalytics'
+import AdminUserManagement from './routes/Admin/AdminUserManagement'
+import AdminContentManagement from './routes/Admin/AdminContentManagement'
 
 function App() {
+  const location = useLocation()
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
   return (
     <ErrorBoundary>
       <AuthProvider>
@@ -51,6 +62,9 @@ function App() {
               <Route path="/admin/statistics" element={<AdminStatistics />} />
               <Route path="/admin/faqs" element={<AdminFAQs />} />
               <Route path="/admin/contact-info" element={<AdminContactInfo />} />
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
+              <Route path="/admin/users" element={<AdminUserManagement />} />
+              <Route path="/admin/content" element={<AdminContentManagement />} />
             </Routes>
           </main>
           <Footer />

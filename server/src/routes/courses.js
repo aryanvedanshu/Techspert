@@ -8,7 +8,7 @@ import {
   getCourseStats,
   reorderCourses,
 } from '../controllers/courseController.js'
-import { authenticateToken, requirePermission } from '../middleware/auth.js'
+import { authenticateAdmin, requirePermission } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -18,7 +18,7 @@ router.get('/stats', getCourseStats)
 router.get('/:id', getCourse)
 
 // Protected routes (Admin only)
-router.use(authenticateToken)
+router.use(authenticateAdmin)
 
 router.post('/', requirePermission('courses', 'create'), createCourse)
 router.put('/:id', requirePermission('courses', 'update'), updateCourse)

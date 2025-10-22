@@ -9,7 +9,7 @@ import {
   getAlumniStats,
   reorderAlumni,
 } from '../controllers/alumniController.js'
-import { authenticateToken, requirePermission } from '../middleware/auth.js'
+import { authenticateAdmin, requirePermission } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -19,7 +19,7 @@ router.get('/stats', getAlumniStats)
 router.get('/:id', getAlumnus)
 
 // Protected routes (Admin only)
-router.use(authenticateToken)
+router.use(authenticateAdmin)
 
 router.post('/', requirePermission('alumni', 'create'), createAlumni)
 router.put('/:id', requirePermission('alumni', 'update'), updateAlumni)

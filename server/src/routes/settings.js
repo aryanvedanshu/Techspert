@@ -11,7 +11,7 @@ import {
   toggleMaintenance,
   resetSettings,
 } from '../controllers/settingsController.js'
-import { authenticateToken, requirePermission } from '../middleware/auth.js'
+import { authenticateAdmin, requirePermission } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -19,7 +19,7 @@ const router = express.Router()
 router.get('/', getSettings)
 
 // Protected routes (Admin only)
-router.use(authenticateToken)
+router.use(authenticateAdmin)
 
 // General settings
 router.put('/', requirePermission('admin', 'update'), updateSettings)

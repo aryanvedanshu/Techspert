@@ -1,11 +1,12 @@
 import axios from 'axios'
 import { toast } from 'sonner'
+import frontendAuthLogger from '../utils/authLogger'
 
 // Create axios instance with base configuration
 console.log("[DEBUG: api.js:init:5] Initializing axios instance")
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  baseURL: 'http://localhost:5000/api',
+  timeout: 15000, // Increased timeout for better reliability
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,21 +14,44 @@ const api = axios.create({
 
 console.log("[DEBUG: api.js:config:6] API base URL:", api.defaults.baseURL)
 
+// Retry configuration
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 second
+
+// Helper function to delay execution
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// Helper function to check if error should be retried
+const shouldRetry = (error) => {
+  if (!error.response) return true // Network errors
+  const status = error.response.status
+  return status >= 500 || status === 429 // Server errors or rate limiting
+}
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    console.log("[DEBUG: api.js:request:15] API request:", config.method?.toUpperCase(), config.url)
+    const startTime = Date.now()
+    config.metadata = { startTime }
+    
+    frontendAuthLogger.apiRequest(
+      config.method?.toUpperCase(), 
+      config.url, 
+      config.headers, 
+      config.data
+    )
+    
     const accessToken = localStorage.getItem('accessToken')
     if (accessToken) {
+      frontendAuthLogger.debug('api', 'request', `Adding access token to request`)
       config.headers.Authorization = `Bearer ${accessToken}`
-      console.log("[DEBUG: api.js:request:auth:18] Added authorization header")
     } else {
-      console.log("[DEBUG: api.js:request:auth:20] No access token found")
+      frontendAuthLogger.debug('api', 'request', `No access token found`)
     }
     return config
   },
   (error) => {
-    console.error("[DEBUG: api.js:request:error:22] Request interceptor error:", error)
+    frontendAuthLogger.error('api', 'request', `Request interceptor error`, { error: error.message })
     return Promise.reject(error)
   }
 )
@@ -35,12 +59,33 @@ api.interceptors.request.use(
 // Response interceptor to handle errors and token refresh
 api.interceptors.response.use(
   (response) => {
-    console.log("[DEBUG: api.js:response:success:37] API response:", response.status, response.config.url)
+    const responseTime = Date.now() - (response.config.metadata?.startTime || Date.now())
+    
+    frontendAuthLogger.apiResponse(
+      response.config.method?.toUpperCase(),
+      response.config.url,
+      response.status,
+      responseTime
+    )
+    
     return response
   },
   async (error) => {
     console.log("[DEBUG: api.js:response:error:39] API error:", error.response?.status, error.config?.url, error.message)
     const originalRequest = error.config
+
+    // Retry logic for network errors and rate limiting
+    if (shouldRetry(error) && originalRequest && !originalRequest._retryCount) {
+      originalRequest._retryCount = 0
+    }
+
+    if (shouldRetry(error) && originalRequest && originalRequest._retryCount < MAX_RETRIES) {
+      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1
+      console.log(`[DEBUG: api.js:response:retry:${originalRequest._retryCount}] Retrying request (attempt ${originalRequest._retryCount}/${MAX_RETRIES})`)
+      
+      await delay(RETRY_DELAY * originalRequest._retryCount) // Exponential backoff
+      return api(originalRequest)
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       console.log("[DEBUG: api.js:response:401:41] 401 error - attempting token refresh")
@@ -51,7 +96,7 @@ api.interceptors.response.use(
         if (refreshToken) {
           console.log("[DEBUG: api.js:response:refresh:44] Attempting to refresh token")
           const response = await axios.post(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+            'http://localhost:5000/api/auth/refresh',
             { refreshToken }
           )
 
@@ -76,8 +121,8 @@ api.interceptors.response.use(
           console.log("[DEBUG: api.js:response:redirect:61] Redirecting to admin login")
           window.location.href = '/admin/login'
         } else {
-          console.log("[DEBUG: api.js:response:redirect:63] Redirecting to user login")
-          window.location.href = '/login'
+          console.log("[DEBUG: api.js:response:redirect:63] Redirecting to home")
+          window.location.href = '/'
         }
         return Promise.reject(refreshError)
       }

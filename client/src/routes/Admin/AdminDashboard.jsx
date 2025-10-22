@@ -7,7 +7,7 @@ import {
   Star, Activity, AlertCircle, CheckCircle, XCircle, RefreshCw,
   UserCheck, HelpCircle, Phone, Target, Brain, Database
 } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
@@ -34,19 +34,22 @@ const AdminDashboard = () => {
   // Real-time data fetching
   const fetchStats = async () => {
     try {
-      const [coursesRes, projectsRes, alumniRes, settingsRes] = await Promise.all([
+      const [coursesRes, projectsRes, alumniRes, enrollmentsRes, paymentsRes] = await Promise.all([
         api.get('/courses'),
         api.get('/projects'),
         api.get('/alumni'),
-        api.get('/settings'),
+        api.get('/enrollments/stats'),
+        api.get('/payments/stats'),
       ])
       
-      const courses = coursesRes.data.courses || []
-      const projects = projectsRes.data.projects || []
-      const alumni = alumniRes.data.alumni || []
+      const courses = coursesRes.data.data || []
+      const projects = projectsRes.data.data || []
+      const alumni = alumniRes.data.data || []
+      const enrollmentStats = enrollmentsRes.data.data || {}
+      const paymentStats = paymentsRes.data.data || {}
       
       // Calculate analytics
-      const totalRevenue = courses.reduce((sum, course) => sum + (course.price || 0), 0)
+      const totalRevenue = paymentStats.successfulAmount || 0
       const averageRating = courses.length > 0 
         ? courses.reduce((sum, course) => sum + (course.rating?.average || 0), 0) / courses.length 
         : 0
@@ -56,11 +59,11 @@ const AdminDashboard = () => {
         totalCourses: courses.length,
         totalProjects: projects.length,
         totalAlumni: alumni.length,
-        totalStudents: 1250, // Mock data - would come from user analytics
+        totalStudents: enrollmentStats.totalEnrollments || 0,
         totalRevenue,
         averageRating: Math.round(averageRating * 10) / 10,
         pendingProjects,
-        activeUsers: 45, // Mock data - would come from user analytics
+        activeUsers: enrollmentStats.activeEnrollments || 0,
       })
 
       // Generate recent activity
@@ -243,7 +246,7 @@ const AdminDashboard = () => {
       title: 'View Analytics',
       description: 'Check course performance and student engagement',
       icon: BarChart3,
-      action: () => handleCreate('analytics'),
+      action: () => window.location.href = '/admin/analytics',
       color: 'bg-indigo-500',
     },
     {
@@ -264,39 +267,60 @@ const AdminDashboard = () => {
 
   const contentManagementCards = [
     {
+      title: 'User Management',
+      description: 'Manage users, enrollments, and permissions',
+      icon: UserCheck,
+      link: '/admin/users',
+      color: 'bg-blue-500',
+    },
+    {
+      title: 'Analytics',
+      description: 'View comprehensive platform analytics',
+      icon: BarChart3,
+      link: '/admin/analytics',
+      color: 'bg-indigo-500',
+    },
+    {
       title: 'Team Management',
       description: 'Manage team members and instructors',
-      icon: UserCheck,
+      icon: Users,
       link: '/admin/team',
-      color: 'bg-blue-500',
+      color: 'bg-green-500',
     },
     {
       title: 'Features',
       description: 'Manage website features and highlights',
       icon: Target,
       link: '/admin/features',
-      color: 'bg-green-500',
+      color: 'bg-purple-500',
     },
     {
       title: 'Statistics',
       description: 'Manage website statistics and metrics',
-      icon: BarChart3,
+      icon: TrendingUp,
       link: '/admin/statistics',
-      color: 'bg-purple-500',
+      color: 'bg-orange-500',
     },
     {
       title: 'FAQs',
       description: 'Manage frequently asked questions',
       icon: HelpCircle,
       link: '/admin/faqs',
-      color: 'bg-orange-500',
+      color: 'bg-yellow-500',
     },
     {
       title: 'Contact Info',
       description: 'Manage contact information and social links',
       icon: Phone,
       link: '/admin/contact-info',
-      color: 'bg-indigo-500',
+      color: 'bg-pink-500',
+    },
+    {
+      title: 'Content Management',
+      description: 'Manage all website content and settings',
+      icon: Database,
+      link: '/admin/content',
+      color: 'bg-teal-500',
     },
     {
       title: 'Site Settings',

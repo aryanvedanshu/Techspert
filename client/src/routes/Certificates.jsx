@@ -4,6 +4,7 @@ import { Download, Eye, Award, CheckCircle } from 'lucide-react'
 import { api } from '../services/api'
 import Card from '../components/UI/Card'
 import Button from '../components/UI/Button'
+import certificateImage from '../assets/images/certificate.png'
 
 const Certificates = () => {
   const [certificates, setCertificates] = useState([])
@@ -83,11 +84,130 @@ const Certificates = () => {
         </div>
       </section>
 
-      {/* Certificates Grid */}
-      <section className="py-16">
+      {/* Sample Certificates Section */}
+      <section className="py-16 bg-white">
         <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
+              Sample Certificates
+            </h2>
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              Preview our certificate templates and see what you'll earn upon course completion
+            </p>
+          </motion.div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.isArray(certificates) && certificates.map((certificate, index) => {
+            {[1, 2, 3].map((index) => (
+              <motion.div
+                key={`sample-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <Card hover className="h-full flex flex-col group">
+                  {/* Certificate Preview */}
+                  <div className="relative mb-6 overflow-hidden rounded-2xl">
+                    <div className="aspect-[4/3] bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                      <img
+                        src={certificateImage}
+                        alt="Sample Certificate"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <Award size={16} className="text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors duration-200">
+                      Sample Certificate {index}
+                    </h3>
+                    
+                    <div className="space-y-2 mb-6 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">Course:</span>
+                        <span className="font-medium text-neutral-900">Sample Course {index}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">Type:</span>
+                        <span className="font-medium text-neutral-900">Completion Certificate</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-neutral-600">Status:</span>
+                        <span className="font-medium text-blue-600">Sample</span>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handlePreview({ type: 'sample', index })}
+                      >
+                        <Eye size={16} className="mr-2" />
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleDownload({ type: 'sample', index })}
+                      >
+                        <Download size={16} className="mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Issued Certificates Section */}
+      <section className="py-16 bg-neutral-50">
+        <div className="container-custom">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
+              Issued Certificates
+            </h2>
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              Your earned certificates from completed courses
+            </p>
+          </motion.div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] bg-neutral-200 rounded-2xl mb-6"></div>
+                  <div className="h-6 bg-neutral-200 rounded mb-4"></div>
+                  <div className="h-4 bg-neutral-200 rounded mb-2"></div>
+                  <div className="h-4 bg-neutral-200 rounded w-3/4"></div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.isArray(certificates) && certificates.length > 0 ? (
+                certificates.map((certificate, index) => {
               const {
                 _id,
                 courseName,
@@ -108,21 +228,12 @@ const Certificates = () => {
                     {/* Certificate Preview */}
                     <div className="relative mb-6 overflow-hidden rounded-2xl">
                       <div className="aspect-[4/3] bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-                        {templateUrl ? (
                           <img
-                            src={templateUrl}
+                              src={certificateImage}
                             alt={`${courseName} Certificate`}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
                           />
-                        ) : (
-                          <img
-                            src="/images/certificate.png"
-                            alt={`${courseName} Certificate`}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                          />
-                        )}
                       </div>
                       <div className="absolute top-4 right-4">
                         <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
@@ -180,49 +291,98 @@ const Certificates = () => {
                   </Card>
                 </motion.div>
               )
-            })}
+                })
+              ) : (
+                // Show 3 placeholder issued certificates when no real certificates exist
+                [1, 2, 3].map((index) => (
+                  <motion.div
+                    key={`issued-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                  >
+                    <Card hover className="h-full flex flex-col group">
+                      {/* Certificate Preview */}
+                      <div className="relative mb-6 overflow-hidden rounded-2xl">
+                        <div className="aspect-[4/3] bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
+                          <img
+                            src={certificateImage}
+                            alt="Issued Certificate"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="absolute top-4 right-4">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                            <CheckCircle size={16} className="text-white" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col">
+                        <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors duration-200">
+                          Issued Certificate {index}
+                        </h3>
+                        
+                        <div className="space-y-2 mb-6 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600">Course:</span>
+                            <span className="font-medium text-neutral-900">Sample Course {index}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600">Student:</span>
+                            <span className="font-medium text-neutral-900">Sample Student {index}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600">Completed:</span>
+                            <span className="font-medium text-neutral-900">
+                              {new Date().toLocaleDateString()}
+                            </span>
+                          </div>
           </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handlePreview({ type: 'issued', index })}
+                          >
+                            <Eye size={16} className="mr-2" />
+                            Preview
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleDownload({ type: 'issued', index })}
+                          >
+                            <Download size={16} className="mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
+            </div>
+          )}
 
           {certificates.length === 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center py-16"
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-center py-8"
             >
-              <div className="w-24 h-24 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Award size={32} className="text-neutral-400" />
-              </div>
-              <h3 className="text-2xl font-heading font-semibold text-neutral-900 mb-4">
-                No certificates yet
-              </h3>
               <p className="text-neutral-600 mb-6">
-                Complete a course to earn your first certificate
+                Complete courses to earn real certificates that will appear here
               </p>
               <Button>
                 Browse Courses
               </Button>
-            </motion.div>
-          )}
-
-          {/* Demo Certificate */}
-          {certificates.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center py-8"
-            >
-              <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-4">
-                Sample Certificate
-              </h3>
-              <div className="max-w-md mx-auto">
-                <img
-                  src="/images/certificate.png"
-                  alt="Sample Certificate"
-                  className="w-full h-auto rounded-2xl shadow-lg"
-                />
-              </div>
             </motion.div>
           )}
         </div>

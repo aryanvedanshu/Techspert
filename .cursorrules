@@ -297,6 +297,212 @@ Please review and approve before I commit these changes.
 - **IMPLEMENT** proper error handling and loading states
 - **USE** the established design system and component patterns
 
+## Common Issues Prevention & Troubleshooting
+
+### Critical Issues to Always Check and Prevent
+
+#### 1. API Configuration Issues
+- **PROBLEM**: Frontend not connecting to backend due to incorrect API URLs
+- **SYMPTOMS**: Data not loading, 404 errors, empty pages
+- **PREVENTION**: 
+  - Always verify `VITE_API_URL` environment variable is set correctly
+  - Default to `http://localhost:5000/api` for development
+  - Test API endpoints with curl before implementing frontend calls
+  - Use hardcoded URLs in development if environment variables fail
+- **FIX**: Update `client/src/services/api.js` baseURL to correct port
+
+#### 2. Asset Import and Path Issues
+- **PROBLEM**: Images and assets not loading due to incorrect import paths
+- **SYMPTOMS**: Broken images, 404 errors for assets, missing visual elements
+- **PREVENTION**:
+  - Always use proper ES6 imports for assets: `import assetName from '../assets/path/asset.ext'`
+  - Verify asset files exist in the correct directory structure
+  - Use relative paths from component location to asset location
+  - Test asset loading in browser developer tools
+- **FIX**: Update import statements and verify file paths
+
+#### 3. Database Index Warnings
+- **PROBLEM**: Mongoose duplicate index warnings causing server startup issues
+- **SYMPTOMS**: Console warnings about duplicate indexes, potential performance issues
+- **PREVENTION**:
+  - Never use both `index: true` in schema field AND `schema.index()` for same field
+  - Check existing indexes before adding new ones
+  - Use `schema.index()` for compound indexes only
+  - Remove redundant index definitions
+- **FIX**: Remove duplicate index calls from model files
+
+#### 4. Server Export/Import Issues
+- **PROBLEM**: Missing exports causing "does not provide an export named" errors
+- **SYMPTOMS**: Server startup failures, module import errors
+- **PREVENTION**:
+  - Always verify all exports are properly defined in middleware files
+  - Use consistent export patterns across the project
+  - Test server startup after any middleware changes
+  - Provide aliases for commonly used functions (e.g., `protect` for `authenticateAdmin`)
+- **FIX**: Add missing exports and verify import statements
+
+#### 5. Data Fetching and Display Issues
+- **PROBLEM**: Frontend pages showing empty content despite backend having data
+- **SYMPTOMS**: Empty pages, loading states that never resolve, no data displayed
+- **PREVENTION**:
+  - Always test API endpoints independently before frontend integration
+  - Implement proper error handling and fallback states
+  - Use structured logging to trace data flow
+  - Verify database seeding completed successfully
+  - Check browser network tab for failed requests
+- **FIX**: Debug API calls, check network requests, verify data structure
+
+#### 6. Environment Configuration Issues
+- **PROBLEM**: Missing or incorrect environment variables causing runtime errors
+- **SYMPTOMS**: Database connection failures, authentication issues, undefined variables
+- **PREVENTION**:
+  - Always provide fallback values for environment variables
+  - Document all required environment variables
+  - Test with and without environment files
+  - Use hardcoded development values when environment fails
+- **FIX**: Create proper .env files or use hardcoded development values
+
+#### 7. Static Content in Dynamic Components
+- **PROBLEM**: Components using hardcoded static data instead of fetching from server
+- **SYMPTOMS**: Outdated content, inconsistent data, manual updates required, content not manageable via admin
+- **PREVENTION**:
+  - NEVER use hardcoded arrays/objects for content that exists in database
+  - ALWAYS fetch dynamic content from appropriate API endpoints
+  - Use empty arrays/objects as fallbacks, not static data
+  - Implement proper data transformation from API response to component format
+  - Test with empty database to ensure fallbacks work
+- **FIX**: Replace static data with API calls and proper data transformation
+
+#### 8. Incomplete Data Integration
+- **PROBLEM**: Components not fetching all required data from server
+- **SYMPTOMS**: Missing content sections, incomplete information, mixed static/dynamic content
+- **PREVENTION**:
+  - Audit all component data sources before implementation
+  - Use Promise.all for parallel API calls when fetching multiple data sources
+  - Map all UI elements to their corresponding database models
+  - Implement comprehensive data fetching with proper error handling
+- **FIX**: Add missing API calls and integrate all data sources properly
+
+#### 9. CORS and Rate Limiting Issues
+- **PROBLEM**: Frontend blocked by CORS policy and rate limiting causing 429 errors
+- **SYMPTOMS**: "Access to XMLHttpRequest blocked by CORS policy", "429 Too Many Requests", network errors
+- **PREVENTION**:
+  - Configure CORS to allow localhost origins in development
+  - Set appropriate rate limiting for development environment
+  - Implement request retry logic with exponential backoff
+  - Add proper error handling for network failures
+  - Use more permissive CORS settings for development
+- **FIX**: Update CORS configuration, adjust rate limits, add retry logic
+
+#### 10. Database Connection Instability
+- **PROBLEM**: Frequent database disconnections causing frontend-backend communication failures
+- **SYMPTOMS**: Intermittent API failures, connection timeouts, data not loading
+- **PREVENTION**:
+  - Implement database connection retry logic with exponential backoff
+  - Add connection event handlers for reconnection
+  - Set appropriate timeout values for database operations
+  - Disable mongoose buffering to prevent stale connections
+  - Add comprehensive connection monitoring and logging
+- **FIX**: Add retry logic, connection event handlers, and proper timeout configuration
+
+### Debugging Checklist
+Before reporting any issue, verify:
+1. ✅ Server is running on correct port (5000)
+2. ✅ Database connection is established
+3. ✅ API endpoints return expected data
+4. ✅ Frontend can reach backend (check network tab)
+5. ✅ All required environment variables are set
+6. ✅ No console errors in browser or server
+7. ✅ All imports and exports are correct
+8. ✅ Asset files exist and are accessible
+9. ✅ No hardcoded static data in dynamic components
+10. ✅ All content comes from database APIs
+11. ✅ Proper error handling and fallback states implemented
+12. ✅ Data transformation from API to component format working
+
+### Quick Fix Commands
+```bash
+# Test API endpoints
+curl http://localhost:5000/health
+curl http://localhost:5000/api/courses
+
+# Check server logs
+cd server && npm start
+
+# Check frontend
+cd client && npm run dev
+
+# Seed database
+cd server && npm run seed
+```
+
+## Automatic Bug Prevention Process
+
+### 🚨 **MANDATORY BUG PREVENTION PROTOCOL**
+
+When ANY bug or issue is discovered, the following process MUST be followed:
+
+#### 1. **Immediate Analysis Phase**
+- **ROOT CAUSE IDENTIFICATION**: Analyze why the bug occurred
+- **IMPACT ASSESSMENT**: Determine if this could affect other components
+- **PATTERN DETECTION**: Check if similar issues exist elsewhere in the codebase
+
+#### 2. **Prevention Rule Creation**
+- **AUTOMATIC RULE ADDITION**: Add prevention rules to this cursor rules file
+- **SYMPTOM DOCUMENTATION**: Document how to identify this issue early
+- **PREVENTION STRATEGIES**: Define specific steps to prevent recurrence
+- **FIX INSTRUCTIONS**: Provide clear resolution steps
+
+#### 3. **Codebase Audit**
+- **SIMILAR ISSUE SEARCH**: Search for similar patterns across the entire codebase
+- **PROACTIVE FIXES**: Fix any similar issues found during audit
+- **VALIDATION**: Ensure fixes follow the new prevention rules
+
+#### 4. **Documentation Update**
+- **CURSOR RULES UPDATE**: Add the new issue to the "Common Issues Prevention & Troubleshooting" section
+- **DEBUGGING CHECKLIST**: Update the debugging checklist if needed
+- **QUICK FIX COMMANDS**: Add any new debugging commands discovered
+
+### 🔄 **Continuous Prevention Process**
+
+#### **Before Every Code Change:**
+1. **DATA SOURCE AUDIT**: Verify all content comes from database, not hardcoded
+2. **API INTEGRATION CHECK**: Ensure all dynamic content has corresponding API calls
+3. **FALLBACK VALIDATION**: Test with empty database to verify fallbacks work
+4. **ERROR HANDLING VERIFICATION**: Confirm proper error handling for all API calls
+
+#### **After Every Bug Fix:**
+1. **RULE ADDITION**: Add prevention rule to cursor rules
+2. **CODEBASE SCAN**: Search for similar issues across all files
+3. **PREVENTION IMPLEMENTATION**: Apply prevention strategies to similar code
+4. **DOCUMENTATION UPDATE**: Update cursor rules with new prevention knowledge
+
+### 📋 **Bug Prevention Checklist**
+
+Before implementing any component:
+- [ ] All content data comes from database APIs
+- [ ] No hardcoded arrays/objects for dynamic content
+- [ ] Proper error handling and fallback states
+- [ ] Parallel API calls using Promise.all when needed
+- [ ] Data transformation from API format to component format
+- [ ] Loading states for all async operations
+- [ ] Comprehensive logging for debugging
+- [ ] Test with empty database to verify fallbacks
+
+### 🎯 **Prevention Rule Template**
+
+When adding new prevention rules, use this format:
+```
+#### X. [Issue Name]
+- **PROBLEM**: [Clear description of the issue]
+- **SYMPTOMS**: [How to identify this issue]
+- **PREVENTION**:
+  - [Specific prevention strategy 1]
+  - [Specific prevention strategy 2]
+  - [Specific prevention strategy 3]
+- **FIX**: [Clear resolution steps]
+```
+
 ## Developer Assistance Communication Protocol
 
 ### Clear Communication Requirements
@@ -606,3 +812,241 @@ VITE_API_URL=http://localhost:5000/api
 - **PERFORMANCE**: Lighthouse scores meet standards
 - **SECURITY**: No vulnerabilities in dependencies
 - **COVERAGE**: Test coverage meets minimum thresholds
+
+## Critical Issue Prevention & Resolution Rules
+
+### 🚨 **MANDATORY ISSUE PREVENTION PROTOCOL**
+
+#### **Issue 1: Unnecessary Authentication Systems**
+- **PROBLEM**: Implementing user authentication when students don't need login functionality
+- **SYMPTOMS**: Login pages, user dashboards, authentication flows for public content
+- **PREVENTION**:
+  - **ALWAYS** clarify user requirements before implementing authentication
+  - **NEVER** add login functionality unless explicitly required
+  - **ONLY** implement admin authentication for content management
+  - **REMOVE** all student/user authentication if not needed
+- **FIX**: Remove login routes, components, and authentication logic for public users
+- **VERIFICATION**: Ensure no login links in navigation and no authentication required for course access
+
+#### **Issue 2: Resource Not Found Errors on Course Pages**
+- **PROBLEM**: API calls failing due to incorrect endpoints or missing authentication
+- **SYMPTOMS**: "Resource not found" errors, 404 responses, empty course detail pages
+- **PREVENTION**:
+  - **ALWAYS** test API endpoints independently before frontend integration
+  - **VERIFY** backend server is running before testing frontend
+  - **USE** correct API base URLs and endpoint paths
+  - **REMOVE** authentication requirements for public content access
+  - **IMPLEMENT** proper error handling with fallback states
+- **FIX**: 
+  1. Test backend API endpoints with curl: `curl http://localhost:5000/api/courses`
+  2. Verify course endpoint: `curl http://localhost:5000/api/courses/{course-id}`
+  3. Remove authentication dependencies from public course pages
+  4. Simplify API calls to only fetch necessary data
+- **VERIFICATION**: Course detail pages load without errors and display all content
+
+#### **Issue 3: Over-Complex Component Architecture**
+- **PROBLEM**: Adding unnecessary complexity with authentication, enrollment, and payment systems
+- **SYMPTOMS**: Complex state management, multiple API calls, authentication dependencies
+- **PREVENTION**:
+  - **START SIMPLE**: Begin with basic functionality and add complexity only when needed
+  - **SEPARATE CONCERNS**: Keep public content separate from authenticated features
+  - **AVOID PREMATURE OPTIMIZATION**: Don't add features until they're actually required
+  - **USE MINIMAL STATE**: Only manage state that's actually needed
+- **FIX**: Simplify components by removing unnecessary features and dependencies
+- **VERIFICATION**: Components work with minimal dependencies and clear functionality
+
+#### **Issue 4: Missing Error Handling and Fallbacks**
+- **PROBLEM**: Components failing silently or showing confusing error messages
+- **SYMPTOMS**: Blank pages, loading states that never resolve, poor user experience
+- **PREVENTION**:
+  - **ALWAYS** implement loading states for async operations
+  - **ALWAYS** provide error boundaries and fallback content
+  - **ALWAYS** handle API failures gracefully
+  - **ALWAYS** show meaningful error messages to users
+- **FIX**: Add comprehensive error handling and loading states
+- **VERIFICATION**: All components handle errors gracefully and provide feedback
+
+#### **Issue 5: Inconsistent API Integration**
+- **PROBLEM**: Frontend making incorrect API calls or expecting wrong data formats
+- **SYMPTOMS**: Data not loading, type errors, inconsistent data display
+- **PREVENTION**:
+  - **ALWAYS** verify API response structure before using data
+  - **ALWAYS** provide default values for optional fields
+  - **ALWAYS** handle missing or null data gracefully
+  - **ALWAYS** test API integration thoroughly
+- **FIX**: 
+  1. Check API response structure: `console.log(response.data)`
+  2. Add data validation and default values
+  3. Handle missing fields gracefully
+- **VERIFICATION**: All data displays correctly even with missing fields
+
+#### **Issue 6: Missing Import Statements**
+- **PROBLEM**: Using components, icons, or functions without importing them
+- **SYMPTOMS**: "ReferenceError: [Component] is not defined", console errors, broken functionality
+- **PREVENTION**:
+  - **ALWAYS** import all used components, icons, and functions at the top of files
+  - **ALWAYS** check import statements when adding new functionality
+  - **ALWAYS** use IDE auto-import features when available
+  - **ALWAYS** verify imports match the exact names used in code
+- **FIX**: 
+  1. Add missing import to the import statement
+  2. Check all used components are properly imported
+  3. Verify import names match usage exactly
+- **VERIFICATION**: No "ReferenceError" or "is not defined" errors in console
+
+#### **Issue 7: Admin Authentication Redirect Loop**
+- **PROBLEM**: Admin login works but immediately redirects back to login page due to token verification failures
+- **SYMPTOMS**: Successful login followed by immediate redirect to login page, console errors about token verification
+- **PREVENTION**:
+  - **ALWAYS** verify admin token verification logic in AuthContext
+  - **ALWAYS** check API interceptor redirects when removing pages (like /login)
+  - **ALWAYS** test admin authentication flow after making changes to auth system
+  - **ALWAYS** add debugging logs to authentication functions for troubleshooting
+- **FIX**: 
+  1. Fix AuthContext token verification to handle admin users properly
+  2. Update API interceptor redirects to point to existing pages
+  3. Add comprehensive debugging logs to authentication flow
+  4. Test admin login flow thoroughly
+- **VERIFICATION**: Admin can login and stay logged in without redirect loops
+
+#### **Issue 8: Authentication Middleware Mismatch**
+- **PROBLEM**: Admin routes using wrong authentication middleware (authenticateToken instead of authenticateAdmin)
+- **SYMPTOMS**: Admin login succeeds but profile/protected endpoints return 401 errors, admin gets redirected back to login, logs show "User not found or inactive" for admin IDs
+- **PREVENTION**:
+  - **ALWAYS** use authenticateAdmin middleware for admin routes
+  - **ALWAYS** use authenticateToken middleware for user routes
+  - **ALWAYS** verify middleware imports in route files
+  - **ALWAYS** test both user and admin authentication flows separately
+  - **ALWAYS** check that middleware matches the model being authenticated (Admin vs User)
+  - **ALWAYS** verify route protection after creating new admin endpoints
+  - **ALWAYS** check logs for "User not found or inactive" errors with admin IDs
+- **FIX**: 
+  1. Update admin routes to import and use authenticateAdmin instead of authenticateToken
+  2. Verify all admin routes use the correct middleware
+  3. Test admin profile endpoint after fixing middleware
+  4. Ensure user routes still use authenticateToken
+  5. Add debugging logs to authentication middleware for troubleshooting
+  6. Check all route files for authenticateToken usage in admin routes
+- **VERIFICATION**: Admin can access protected admin endpoints without 401 errors
+- **AFFECTED ROUTES**: settings.js, courses.js, projects.js, alumni.js, analytics.js, userManagement.js
+
+### 🔐 **AUTHENTICATION MIDDLEWARE BEST PRACTICES**
+
+#### **Middleware Selection Rules**
+- **Admin Routes**: ALWAYS use `authenticateAdmin` middleware
+  - Routes: `/api/admin/*`, `/api/admin/analytics/*`, `/api/admin/users/*`
+  - Models: Admin model authentication
+  - Token: Admin JWT tokens
+- **User Routes**: ALWAYS use `authenticateToken` middleware
+  - Routes: `/api/auth/*`, `/api/users/*`, `/api/courses/*` (user-specific)
+  - Models: User model authentication
+  - Token: User JWT tokens
+
+#### **Route Protection Checklist**
+- [ ] **IMPORT CHECK**: Verify correct middleware import in route file
+- [ ] **MODEL MATCH**: Ensure middleware matches the model being authenticated
+- [ ] **ENDPOINT TEST**: Test protected endpoints after middleware changes
+- [ ] **TOKEN VERIFICATION**: Verify tokens work with correct middleware
+- [ ] **DEBUGGING LOGS**: Add comprehensive logging to authentication middleware
+
+#### **Common Middleware Mistakes to Avoid**
+- ❌ Using `authenticateToken` for admin routes
+- ❌ Using `authenticateAdmin` for user routes
+- ❌ Mixing middleware types in the same route file
+- ❌ Forgetting to import the correct middleware
+- ❌ Not testing authentication after middleware changes
+
+### 🔧 **SYSTEMATIC ISSUE RESOLUTION PROCESS**
+
+#### **Step 1: Issue Identification**
+1. **IDENTIFY** the specific problem (login errors, resource not found, etc.)
+2. **REPRODUCE** the issue consistently
+3. **ANALYZE** the root cause (API, routing, authentication, etc.)
+4. **DOCUMENT** the symptoms and error messages
+
+#### **Step 2: Root Cause Analysis**
+1. **CHECK** backend server status and API endpoints
+2. **VERIFY** frontend routing and component logic
+3. **TEST** API calls independently
+4. **IDENTIFY** unnecessary dependencies or complexity
+
+#### **Step 3: Systematic Fixing**
+1. **REMOVE** unnecessary features and dependencies
+2. **SIMPLIFY** component logic and state management
+3. **FIX** API integration and error handling
+4. **TEST** each fix thoroughly before moving to next issue
+
+#### **Step 4: Prevention Implementation**
+1. **ADD** prevention rules to cursor rules
+2. **DOCUMENT** the issue and solution
+3. **UPDATE** development guidelines
+4. **VERIFY** similar issues don't exist elsewhere
+
+### 📋 **MANDATORY PREVENTION CHECKLIST**
+
+Before implementing any feature:
+- [ ] **REQUIREMENT CLARITY**: Is this feature actually needed?
+- [ ] **AUTHENTICATION NEED**: Does this require user authentication?
+- [ ] **API VERIFICATION**: Are the required API endpoints working?
+- [ ] **IMPORT VERIFICATION**: Are all used components, icons, and functions imported?
+- [ ] **MIDDLEWARE VERIFICATION**: Are admin routes using authenticateAdmin and user routes using authenticateToken?
+- [ ] **ERROR HANDLING**: How will this handle failures?
+- [ ] **SIMPLICITY**: Can this be implemented more simply?
+- [ ] **TESTING**: How will this be tested?
+
+Before deploying any changes:
+- [ ] **BACKEND TESTING**: All API endpoints tested with curl
+- [ ] **FRONTEND TESTING**: All pages load without errors
+- [ ] **ERROR HANDLING**: All error cases handled gracefully
+- [ ] **USER EXPERIENCE**: No confusing or broken functionality
+- [ ] **PERFORMANCE**: No unnecessary API calls or complexity
+
+### 🎯 **QUICK FIX COMMANDS**
+
+```bash
+# Test backend API
+curl http://localhost:5000/api/courses
+curl http://localhost:5000/api/courses/{course-id}
+
+# Test admin authentication
+curl -H "Authorization: Bearer <admin-token>" http://localhost:5000/api/admin/profile
+curl -H "Authorization: Bearer <user-token>" http://localhost:5000/api/auth/profile
+
+# Check server status
+netstat -an | findstr :5000
+netstat -an | findstr :5173
+
+# Test frontend
+curl http://localhost:5173
+
+# Check for linting errors
+npm run lint
+```
+
+### 🔍 **AUTHENTICATION DEBUGGING COMMANDS**
+
+```bash
+# Test admin login endpoint
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"email":"admin@techspert.com","password":"admin123456"}' \
+  http://localhost:5000/api/admin/login
+
+# Test admin profile with token
+curl -H "Authorization: Bearer <admin-token>" \
+  http://localhost:5000/api/admin/profile
+
+# Test user profile with token
+curl -H "Authorization: Bearer <user-token>" \
+  http://localhost:5000/api/auth/profile
+```
+
+### 🚀 **SUCCESS CRITERIA**
+
+- **✅ NO LOGIN REQUIRED**: Students can access all content without authentication
+- **✅ NO RESOURCE ERRORS**: All course pages load without "resource not found" errors
+- **✅ NO IMPORT ERRORS**: All components, icons, and functions are properly imported
+- **✅ CORRECT MIDDLEWARE**: Admin routes use authenticateAdmin, user routes use authenticateToken
+- **✅ SIMPLE ARCHITECTURE**: Components are simple and focused
+- **✅ PROPER ERROR HANDLING**: All errors are handled gracefully
+- **✅ CONSISTENT API INTEGRATION**: All data loads and displays correctly
+- **✅ FAST LOADING**: Pages load quickly without unnecessary complexity

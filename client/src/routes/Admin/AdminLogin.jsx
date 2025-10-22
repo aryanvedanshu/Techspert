@@ -143,8 +143,14 @@ const AdminLogin = () => {
           <div className="mt-8 p-4 bg-neutral-50 rounded-xl">
             <h3 className="text-sm font-medium text-neutral-700 mb-2">Demo Credentials:</h3>
             <div className="text-xs text-neutral-600 space-y-1">
-              <p><strong>Email:</strong> super-admin@techspert.ai</p>
-              <p><strong>Password:</strong> Admin123</p>
+              <p><strong>Super Admin:</strong></p>
+              <p>Email: admin@techspert.com</p>
+              <p>Password: admin123456</p>
+              <div className="mt-2 pt-2 border-t border-neutral-200">
+                <p><strong>Manager:</strong></p>
+                <p>Email: manager@techspert.com</p>
+                <p>Password: manager123456</p>
+              </div>
             </div>
           </div>
         </Card>

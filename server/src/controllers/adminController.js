@@ -1,18 +1,31 @@
 import jwt from 'jsonwebtoken'
 import Admin from '../models/Admin.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import authLogger from '../utils/authLogger.js'
 
 // @desc    Login admin
 // @route   POST /api/admin/login
 // @access  Public
 export const loginAdmin = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: adminController.js:loginAdmin:8] Admin login attempt started")
+  const startTime = Date.now()
   const { email, password } = req.body
-  console.log("[DEBUG: adminController.js:loginAdmin:10] Login attempt for email:", email)
+  
+  authLogger.loginAttempt(email, true)
+  authLogger.info('adminController', 'loginAdmin', `Admin login attempt started`, {
+    email,
+    hasPassword: !!password,
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  })
 
   // Validate input
   if (!email || !password) {
-    console.log("[DEBUG: adminController.js:loginAdmin:validation:12] Missing email or password")
+    authLogger.loginFailure(email, 'Missing email or password')
+    authLogger.error('adminController', 'loginAdmin', `Validation failed - missing credentials`, {
+      email,
+      hasEmail: !!email,
+      hasPassword: !!password
+    })
     return res.status(400).json({
       success: false,
       message: 'Please provide email and password',
@@ -20,12 +33,20 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   // Find admin and include password
-  console.log("[DEBUG: adminController.js:loginAdmin:db:20] Searching for admin in database")
+  authLogger.debug('adminController', 'loginAdmin', `Searching for admin in database`)
   const admin = await Admin.findOne({ email }).select('+password')
-  console.log("[DEBUG: adminController.js:loginAdmin:db:21] Admin found:", admin ? "Yes" : "No")
+  
+  authLogger.debug('adminController', 'loginAdmin', `Admin database lookup completed`, {
+    email,
+    adminFound: !!admin,
+    adminId: admin?._id
+  })
 
   if (!admin) {
-    console.log("[DEBUG: adminController.js:loginAdmin:error:22] Admin not found for email:", email)
+    authLogger.loginFailure(email, 'Admin not found')
+    authLogger.error('adminController', 'loginAdmin', `Admin not found for email`, {
+      email
+    })
     return res.status(401).json({
       success: false,
       message: 'Invalid credentials',
@@ -33,9 +54,19 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   // Check if account is locked
-  console.log("[DEBUG: adminController.js:loginAdmin:check:36] Checking if account is locked:", admin.isLocked)
+  authLogger.debug('adminController', 'loginAdmin', `Checking account status`, {
+    adminId: admin._id,
+    isLocked: admin.isLocked,
+    isActive: admin.isActive
+  })
+  
   if (admin.isLocked) {
-    console.log("[DEBUG: adminController.js:loginAdmin:error:36] Account is locked for email:", email)
+    authLogger.loginFailure(email, 'Account is locked')
+    authLogger.error('adminController', 'loginAdmin', `Account is locked`, {
+      email,
+      adminId: admin._id,
+      isLocked: admin.isLocked
+    })
     return res.status(401).json({
       success: false,
       message: 'Account is temporarily locked due to multiple failed login attempts',
@@ -43,9 +74,13 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   // Check if account is active
-  console.log("[DEBUG: adminController.js:loginAdmin:check:44] Checking if account is active:", admin.isActive)
   if (!admin.isActive) {
-    console.log("[DEBUG: adminController.js:loginAdmin:error:44] Account is deactivated for email:", email)
+    authLogger.loginFailure(email, 'Account is deactivated')
+    authLogger.error('adminController', 'loginAdmin', `Account is deactivated`, {
+      email,
+      adminId: admin._id,
+      isActive: admin.isActive
+    })
     return res.status(401).json({
       success: false,
       message: 'Account is deactivated',
@@ -53,15 +88,24 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   // Check password
-  console.log("[DEBUG: adminController.js:loginAdmin:password:52] Validating password")
+  authLogger.debug('adminController', 'loginAdmin', `Validating password`)
   const isPasswordValid = await admin.comparePassword(password)
-  console.log("[DEBUG: adminController.js:loginAdmin:password:53] Password validation result:", isPasswordValid)
+  
+  authLogger.debug('adminController', 'loginAdmin', `Password validation completed`, {
+    adminId: admin._id,
+    passwordValid: isPasswordValid
+  })
 
   if (!isPasswordValid) {
-    console.log("[DEBUG: adminController.js:loginAdmin:error:54] Invalid password for email:", email)
+    authLogger.loginFailure(email, 'Invalid password')
+    authLogger.error('adminController', 'loginAdmin', `Invalid password`, {
+      email,
+      adminId: admin._id
+    })
+    
     // Increment login attempts
     await admin.incLoginAttempts()
-    console.log("[DEBUG: adminController.js:loginAdmin:attempts:56] Login attempts incremented")
+    authLogger.debug('adminController', 'loginAdmin', `Login attempts incremented`)
     
     return res.status(401).json({
       success: false,
@@ -70,11 +114,11 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   }
 
   // Reset login attempts on successful login
-  console.log("[DEBUG: adminController.js:loginAdmin:success:73] Resetting login attempts for successful login")
+  authLogger.debug('adminController', 'loginAdmin', `Resetting login attempts for successful login`)
   await admin.resetLoginAttempts()
 
   // Generate JWT token
-  console.log("[DEBUG: adminController.js:loginAdmin:token:76] Generating JWT token")
+  authLogger.debug('adminController', 'loginAdmin', `Generating JWT token`)
   const token = jwt.sign(
     { id: admin._id, email: admin.email, role: admin.role },
     process.env.JWT_SECRET,
@@ -82,7 +126,7 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   )
 
   // Generate refresh token
-  console.log("[DEBUG: adminController.js:loginAdmin:token:83] Generating refresh token")
+  authLogger.debug('adminController', 'loginAdmin', `Generating refresh token`)
   const refreshToken = jwt.sign(
     { id: admin._id },
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
@@ -90,26 +134,33 @@ export const loginAdmin = asyncHandler(async (req, res) => {
   )
 
   // Add refresh token to admin
-  console.log("[DEBUG: adminController.js:loginAdmin:token:90] Adding refresh token to admin")
+  authLogger.debug('adminController', 'loginAdmin', `Adding refresh token to admin`)
   admin.refreshTokens.push({ token: refreshToken })
   await admin.save()
 
   // Remove password from response
-  console.log("[DEBUG: adminController.js:loginAdmin:response:94] Preparing admin data for response")
+  authLogger.debug('adminController', 'loginAdmin', `Preparing admin data for response`)
   const adminData = admin.toObject()
   delete adminData.password
   delete adminData.refreshTokens
 
-  console.log("[DEBUG: adminController.js:loginAdmin:success:98] Login successful for email:", email)
+  const responseTime = Date.now() - startTime
+  const tokens = { accessToken: token, refreshToken: refreshToken }
+  
+  authLogger.loginSuccess(email, admin._id, admin.role, tokens)
+  authLogger.info('adminController', 'loginAdmin', `Login successful`, {
+    email,
+    adminId: admin._id,
+    role: admin.role,
+    responseTime: `${responseTime}ms`
+  })
+  
   res.json({
     success: true,
     message: 'Login successful',
     data: {
       user: adminData,
-      tokens: {
-        accessToken: token,
-        refreshToken: refreshToken,
-      },
+      tokens: tokens,
     },
   })
 })

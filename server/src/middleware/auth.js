@@ -1,34 +1,63 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 import Admin from '../models/Admin.js'
+import authLogger from '../utils/authLogger.js'
 
 // Verify JWT token for users
 export const authenticateToken = async (req, res, next) => {
-  console.log("[TS-LOG][AUTH] User authentication middleware triggered")
+  const startTime = Date.now()
+  authLogger.info('authenticateToken', 'middleware', `User authentication middleware triggered`, {
+    route: req.path,
+    method: req.method,
+    hasAuthHeader: !!req.headers.authorization
+  })
+  
   try {
     const authHeader = req.headers.authorization
     const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
-    console.log("[TS-LOG][AUTH] Token present:", !!token)
+    
+    authLogger.debug('authenticateToken', 'middleware', `Token extraction`, {
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenLength: token?.length
+    })
 
     if (!token) {
-      console.log("[TS-LOG][AUTH] No token provided")
+      authLogger.error('authenticateToken', 'middleware', `No token provided`, {
+        route: req.path,
+        method: req.method
+      })
       return res.status(401).json({
         success: false,
         message: 'Access token required',
       })
     }
 
-    console.log("[TS-LOG][AUTH] Verifying JWT token")
+    authLogger.debug('authenticateToken', 'middleware', `Verifying JWT token`)
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    console.log("[TS-LOG][AUTH] Token decoded for user ID:", decoded.id)
+    
+    authLogger.debug('authenticateToken', 'middleware', `Token decoded successfully`, {
+      userId: decoded.id,
+      tokenType: decoded.type || 'user'
+    })
     
     // Find user and check if still active
-    console.log("[TS-LOG][AUTH] Looking up user in database")
+    authLogger.debug('authenticateToken', 'middleware', `Looking up user in database`)
     const user = await User.findById(decoded.id).select('-password')
-    console.log("[TS-LOG][AUTH] User found:", !!user, "Active:", user?.isActive)
+    
+    authLogger.debug('authenticateToken', 'middleware', `User lookup completed`, {
+      userFound: !!user,
+      isActive: user?.isActive,
+      isLocked: user?.isLocked,
+      userId: user?._id
+    })
     
     if (!user || !user.isActive) {
-      console.log("[TS-LOG][AUTH] User not found or inactive")
+      authLogger.error('authenticateToken', 'middleware', `User not found or inactive`, {
+        userId: decoded.id,
+        userFound: !!user,
+        isActive: user?.isActive
+      })
       return res.status(401).json({
         success: false,
         message: 'Invalid or expired token',
@@ -36,16 +65,24 @@ export const authenticateToken = async (req, res, next) => {
     }
 
     // Check if account is locked
-    console.log("[TS-LOG][AUTH] Checking if account is locked:", user.isLocked)
     if (user.isLocked) {
-      console.log("[TS-LOG][AUTH] Account is locked")
+      authLogger.error('authenticateToken', 'middleware', `Account is locked`, {
+        userId: user._id,
+        isLocked: user.isLocked
+      })
       return res.status(401).json({
         success: false,
         message: 'Account is temporarily locked due to multiple failed login attempts',
       })
     }
 
-    console.log("[TS-LOG][AUTH] Authentication successful, setting req.user")
+    const responseTime = Date.now() - startTime
+    authLogger.info('authenticateToken', 'middleware', `User authentication successful`, {
+      userId: user._id,
+      email: user.email,
+      responseTime: `${responseTime}ms`
+    })
+    
     req.user = user
     next()
   } catch (error) {
@@ -73,23 +110,60 @@ export const authenticateToken = async (req, res, next) => {
 
 // Verify JWT token for admins
 export const authenticateAdmin = async (req, res, next) => {
+  const startTime = Date.now()
+  authLogger.info('authenticateAdmin', 'middleware', `Admin authentication middleware triggered`, {
+    route: req.path,
+    method: req.method,
+    hasAuthHeader: !!req.headers.authorization
+  })
+  
   try {
     const authHeader = req.headers.authorization
     const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
+    
+    authLogger.debug('authenticateAdmin', 'middleware', `Token extraction`, {
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenLength: token?.length
+    })
 
     if (!token) {
+      authLogger.error('authenticateAdmin', 'middleware', `No token provided`, {
+        route: req.path,
+        method: req.method
+      })
       return res.status(401).json({
         success: false,
         message: 'Access token required',
       })
     }
 
+    authLogger.debug('authenticateAdmin', 'middleware', `Verifying JWT token`)
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     
+    authLogger.debug('authenticateAdmin', 'middleware', `Token decoded successfully`, {
+      adminId: decoded.id,
+      tokenType: decoded.type || 'admin'
+    })
+    
     // Find admin and check if still active
+    authLogger.debug('authenticateAdmin', 'middleware', `Looking up admin in database`)
     const admin = await Admin.findById(decoded.id).select('-password')
     
+    authLogger.debug('authenticateAdmin', 'middleware', `Admin lookup completed`, {
+      adminFound: !!admin,
+      isActive: admin?.isActive,
+      isLocked: admin?.isLocked,
+      role: admin?.role,
+      adminId: admin?._id
+    })
+    
     if (!admin || !admin.isActive) {
+      authLogger.error('authenticateAdmin', 'middleware', `Admin not found or inactive`, {
+        adminId: decoded.id,
+        adminFound: !!admin,
+        isActive: admin?.isActive
+      })
       return res.status(401).json({
         success: false,
         message: 'Invalid or expired token',
@@ -98,12 +172,24 @@ export const authenticateAdmin = async (req, res, next) => {
 
     // Check if account is locked
     if (admin.isLocked) {
+      authLogger.error('authenticateAdmin', 'middleware', `Admin account is locked`, {
+        adminId: admin._id,
+        isLocked: admin.isLocked
+      })
       return res.status(401).json({
         success: false,
         message: 'Account is temporarily locked due to multiple failed login attempts',
       })
     }
 
+    const responseTime = Date.now() - startTime
+    authLogger.info('authenticateAdmin', 'middleware', `Admin authentication successful`, {
+      adminId: admin._id,
+      email: admin.email,
+      role: admin.role,
+      responseTime: `${responseTime}ms`
+    })
+    
     req.admin = admin
     next()
   } catch (error) {

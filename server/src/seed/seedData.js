@@ -20,33 +20,13 @@ import Certificate from '../models/Certificate.js'
 const demoData = {
   admins: [
     {
-      name: 'John Admin',
+      name: 'Super Admin',
       email: 'admin@techspert.com',
       password: 'admin123456',
       role: 'super-admin',
       profile: {
         bio: 'Super administrator with full system access',
         department: 'IT Administration',
-      },
-    },
-    {
-      name: 'Sarah Manager',
-      email: 'manager@techspert.com',
-      password: 'manager123456',
-      role: 'admin',
-      profile: {
-        bio: 'Content manager responsible for course and project management',
-        department: 'Content Management',
-      },
-    },
-    {
-      name: 'Mike Moderator',
-      email: 'moderator@techspert.com',
-      password: 'moderator123456',
-      role: 'moderator',
-      profile: {
-        bio: 'Content moderator for alumni and project approvals',
-        department: 'Content Moderation',
       },
     },
   ],

@@ -52,7 +52,7 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Admin Login & Mobile Menu Button */}
+          {/* Admin Access & Mobile Menu Button */}
           <div className="flex items-center space-x-4">
             <Link
               to="/admin/login"
