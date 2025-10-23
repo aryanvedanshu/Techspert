@@ -94,13 +94,29 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken')
         if (refreshToken) {
-          console.log("[DEBUG: api.js:response:refresh:44] Attempting to refresh token")
+          // Determine if this is an admin token by checking the user data
+          const userData = localStorage.getItem('user')
+          const isAdmin = userData ? JSON.parse(userData).role === 'admin' || JSON.parse(userData).role === 'super-admin' : false
+          const refreshEndpoint = isAdmin ? '/api/admin/refresh' : '/api/auth/refresh'
+          
+          console.log("[DEBUG: api.js:response:refresh:44] Attempting to refresh token", { isAdmin, refreshEndpoint })
           const response = await axios.post(
-            'http://localhost:5000/api/auth/refresh',
+            `http://localhost:5000${refreshEndpoint}`,
             { refreshToken }
           )
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens
+          // Handle different response structures for admin vs user refresh
+          let accessToken, newRefreshToken
+          if (isAdmin) {
+            // Admin refresh returns: { success: true, token: newToken }
+            accessToken = response.data.token
+            newRefreshToken = refreshToken // Admin refresh doesn't return new refresh token
+          } else {
+            // User refresh returns: { success: true, data: { tokens: { accessToken, refreshToken } } }
+            const tokens = response.data.data?.tokens || response.data.data
+            accessToken = tokens.accessToken
+            newRefreshToken = tokens.refreshToken
+          }
           localStorage.setItem('accessToken', accessToken)
           localStorage.setItem('refreshToken', newRefreshToken)
           console.log("[DEBUG: api.js:response:refresh:success:50] Token refresh successful")
