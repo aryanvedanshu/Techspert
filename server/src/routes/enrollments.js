@@ -9,7 +9,7 @@ import {
   getCourseEnrollments,
   getEnrollmentStats
 } from '../controllers/enrollmentController.js'
-import { authenticateToken, requireRole } from '../middleware/auth.js'
+import { authenticateToken, authenticateAdmin, requireRole } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -25,8 +25,8 @@ router.get('/', authenticateToken, getStudentEnrollments)
 
 // @route   GET /api/enrollments/stats
 // @desc    Get enrollment statistics
-// @access  Private/Admin
-router.get('/stats', authenticateToken, requireRole(['admin']), getEnrollmentStats)
+// @access  Admin
+router.get('/stats', authenticateAdmin, getEnrollmentStats)
 
 // @route   GET /api/enrollments/:id
 // @desc    Get single enrollment

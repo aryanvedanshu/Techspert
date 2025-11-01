@@ -9,7 +9,7 @@ import {
   leaveSession,
   getSessionStats
 } from '../controllers/sessionController.js'
-import { authenticateToken, requireRole } from '../middleware/auth.js'
+import { authenticateToken, authenticateAdmin, requireRole } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -20,8 +20,8 @@ router.get('/upcoming', getUpcomingSessions)
 
 // @route   GET /api/sessions/stats
 // @desc    Get session statistics
-// @access  Private/Admin
-router.get('/stats', authenticateToken, requireRole(['admin']), getSessionStats)
+// @access  Admin
+router.get('/stats', authenticateAdmin, getSessionStats)
 
 // @route   GET /api/sessions/:id
 // @desc    Get single session

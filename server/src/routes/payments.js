@@ -9,7 +9,7 @@ import {
   getRevenueByPeriod,
   handleStripeWebhook
 } from '../controllers/paymentController.js'
-import { authenticateToken, requireRole } from '../middleware/auth.js'
+import { authenticateToken, authenticateAdmin, requireRole } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -30,13 +30,13 @@ router.get('/', authenticateToken, getStudentPayments)
 
 // @route   GET /api/payments/stats
 // @desc    Get payment statistics
-// @access  Private/Admin
-router.get('/stats', authenticateToken, requireRole(['admin']), getPaymentStats)
+// @access  Admin
+router.get('/stats', authenticateAdmin, getPaymentStats)
 
 // @route   GET /api/payments/revenue
 // @desc    Get revenue by period
-// @access  Private/Admin
-router.get('/revenue', authenticateToken, requireRole(['admin']), getRevenueByPeriod)
+// @access  Admin
+router.get('/revenue', authenticateAdmin, getRevenueByPeriod)
 
 // @route   GET /api/payments/:id
 // @desc    Get single payment
@@ -45,8 +45,8 @@ router.get('/:id', authenticateToken, getPayment)
 
 // @route   POST /api/payments/:id/refund
 // @desc    Process refund
-// @access  Private/Admin
-router.post('/:id/refund', authenticateToken, requireRole(['admin']), processRefund)
+// @access  Admin
+router.post('/:id/refund', authenticateAdmin, processRefund)
 
 // @route   POST /api/payments/webhook
 // @desc    Handle Stripe webhook

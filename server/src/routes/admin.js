@@ -11,6 +11,8 @@ import {
   updateAdmin,
   deleteAdmin,
   getDashboardStats,
+  getEnrollmentStats,
+  getPaymentStats,
 } from '../controllers/adminController.js'
 import { authenticateAdmin, requireRole, loginRateLimit } from '../middleware/auth.js'
 
@@ -31,6 +33,8 @@ router.post('/logout', logoutAdmin)
 
 // Dashboard
 router.get('/dashboard', getDashboardStats)
+router.get('/enrollments/stats', getEnrollmentStats)
+router.get('/payments/stats', getPaymentStats)
 
 // Admin management (Super Admin only)
 router.get('/admins', requireRole('super-admin'), getAdmins)

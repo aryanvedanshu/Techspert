@@ -38,8 +38,8 @@ const AdminDashboard = () => {
         api.get('/courses'),
         api.get('/projects'),
         api.get('/alumni'),
-        api.get('/enrollments/stats'),
-        api.get('/payments/stats'),
+        api.get('/admin/enrollments/stats'),
+        api.get('/admin/payments/stats'),
       ])
       
       const courses = coursesRes.data.data || []
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
       const paymentStats = paymentsRes.data.data || {}
       
       // Calculate analytics
-      const totalRevenue = paymentStats.successfulAmount || 0
+      const totalRevenue = paymentStats.totalRevenue || 0
       const averageRating = courses.length > 0 
         ? courses.reduce((sum, course) => sum + (course.rating?.average || 0), 0) / courses.length 
         : 0

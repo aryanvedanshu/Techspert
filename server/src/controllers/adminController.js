@@ -411,3 +411,106 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     data: stats,
   })
 })
+
+// @desc    Get enrollment statistics
+// @route   GET /api/admin/enrollments/stats
+// @access  Private
+export const getEnrollmentStats = asyncHandler(async (req, res) => {
+  const Enrollment = (await import('../models/Enrollment.js')).default
+  
+  const totalEnrollments = await Enrollment.countDocuments()
+  const activeEnrollments = await Enrollment.countDocuments({ status: 'active' })
+  const completedEnrollments = await Enrollment.countDocuments({ status: 'completed' })
+  
+  // Get enrollment trends (last 6 months)
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  
+  const monthlyEnrollments = await Enrollment.aggregate([
+    {
+      $match: {
+        createdAt: { $gte: sixMonthsAgo }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
+    }
+  ])
+
+  res.json({
+    success: true,
+    data: {
+      totalEnrollments,
+      activeEnrollments,
+      completedEnrollments,
+      monthlyTrends: monthlyEnrollments
+    }
+  })
+})
+
+// @desc    Get payment statistics
+// @route   GET /api/admin/payments/stats
+// @access  Private
+export const getPaymentStats = asyncHandler(async (req, res) => {
+  const Payment = (await import('../models/Payment.js')).default
+  
+  const totalPayments = await Payment.countDocuments()
+  const successfulPayments = await Payment.countDocuments({ status: 'succeeded' })
+  const pendingPayments = await Payment.countDocuments({ status: 'pending' })
+  const failedPayments = await Payment.countDocuments({ status: 'failed' })
+  
+  // Calculate total revenue
+  const revenueResult = await Payment.aggregate([
+    { $match: { status: 'succeeded' } },
+    { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
+  ])
+  
+  const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0
+  
+  // Get revenue trends (last 6 months)
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+  
+  const monthlyRevenue = await Payment.aggregate([
+    {
+      $match: {
+        status: 'succeeded',
+        createdAt: { $gte: sixMonthsAgo }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        revenue: { $sum: '$amount' },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1 }
+    }
+  ])
+
+  res.json({
+    success: true,
+    data: {
+      totalPayments,
+      successfulPayments,
+      pendingPayments,
+      failedPayments,
+      totalRevenue,
+      monthlyRevenue
+    }
+  })
+})

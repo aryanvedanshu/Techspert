@@ -428,59 +428,14 @@ const About = () => {
                 </motion.div>
               ))
             ) : (
-              // Fallback team when no data is available
-              [
-                { name: "Alex Johnson", role: "Lead Instructor", department: "Full Stack Development", bio: "Senior developer with 8+ years of experience building scalable web applications.", socialLinks: { linkedin: "#", github: "#" } },
-                { name: "Dr. Emily Chen", role: "AI Research Lead", department: "Machine Learning", bio: "AI Research Scientist with PhD in Computer Science, specializing in neural networks.", socialLinks: { linkedin: "#", github: "#" } },
-                { name: "Michael Rodriguez", role: "Data Science Expert", department: "Analytics", bio: "Data Scientist with 6+ years in analytics and machine learning applications.", socialLinks: { linkedin: "#", github: "#" } }
-              ].map((member, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <Card hover className="text-center h-full">
-                    <div className="w-24 h-24 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <span className="text-white text-2xl font-bold">
-                        {member.name.charAt(0)}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-2">
-                      {member.name}
-                    </h3>
-                    <div className="text-primary-600 font-medium mb-4">
-                      {member.role}
-                    </div>
-                    <div className="text-neutral-500 text-sm mb-2">
-                      {member.department}
-                    </div>
-                    <p className="text-neutral-600 leading-relaxed mb-6">
-                      {member.bio}
-                    </p>
-                    
-                    {/* Social Links */}
-                    <div className="flex justify-center gap-3">
-                      <a
-                        href={member.socialLinks.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
-                      >
-                        <Linkedin size={18} className="text-neutral-600 group-hover:text-primary-600" />
-                      </a>
-                      <a
-                        href={member.socialLinks.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
-                      >
-                        <Github size={18} className="text-neutral-600 group-hover:text-primary-600" />
-                      </a>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))
+              // No team data available from database - show message
+              <div className="col-span-full text-center py-12">
+                <div className="text-neutral-400 mb-4">
+                  <Users size={48} className="mx-auto mb-4" />
+                  <p className="text-lg font-medium text-neutral-600">No team members found</p>
+                  <p className="text-sm text-neutral-500 mt-2">Team members will appear here once they are added via the admin panel.</p>
+                </div>
+              </div>
             )}
           </div>
         </div>
