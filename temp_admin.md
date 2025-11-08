@@ -1117,4 +1117,5 @@ This admin system provides a complete solution for managing the Techspert educat
 3. Advanced automation
 4. Performance optimization
 
-This comprehensive admin system will provide complete control over the Techspert educational platform, enabling efficient content management, user administration, and system monitoring.
+This comprehensive admin system will provide complete control over the 
+Techspert educational platform, enabling efficient content management, user administration, and system monitoring.

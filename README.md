@@ -136,14 +136,23 @@ cd client && npm run dev
 
 ### 📊 What's Included
 The system automatically seeds with:
-- ✅ 3 comprehensive courses (AI/ML, Data Science, MERN Stack)
-- ✅ 3 student projects with GitHub/demo links
-- ✅ 3 alumni success stories from top companies
+- ✅ 4 comprehensive courses (Flutter App Development, MERN Stack, AI & Machine Learning, Data Science)
+- ✅ Expert instructors with LinkedIn profiles
+- ✅ Student projects with GitHub/demo links
+- ✅ Alumni success stories from top companies
 - ✅ Complete admin dashboard with CRUD operations
 - ✅ Professional branding and splash animations
 - ✅ Responsive design for all devices
 - ✅ JWT authentication with refresh tokens
 - ✅ Role-based access control
+
+### 📚 Available Courses
+1. **Flutter App Development** - Build cross-platform mobile apps (Instructor: Mohan Naudiyal)
+2. **MERN Stack Development** - Full-stack web development (Instructor: Mayank Aggarwal)
+3. **AI & Machine Learning** - AI/ML fundamentals and applications (Instructor: Aryan Goel)
+4. **Data Science** - Data analysis and predictive modeling (Instructor: Aryan Goel)
+
+All courses are beginner-friendly and start from the basics!
 
 ## 📚 Available Scripts
 
@@ -161,7 +170,8 @@ npm run lint         # Run ESLint
 npm run dev          # Start with nodemon
 npm start            # Start production server
 npm test             # Run tests
-npm run seed         # Seed database
+npm run seed         # Seed database with demo data
+node src/scripts/updateCoursesFinal.js  # Update courses with latest data
 ```
 
 ## 🧪 Testing
