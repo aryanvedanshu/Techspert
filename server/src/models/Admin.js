@@ -97,6 +97,8 @@ const adminSchema = new mongoose.Schema({
       expires: 604800, // 7 days
     },
   }],
+  passwordResetToken: String,
+  passwordResetExpires: Date,
 }, {
   timestamps: true,
 })

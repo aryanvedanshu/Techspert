@@ -1,65 +1,110 @@
 import mongoose from 'mongoose'
+import logger from '../utils/logger.js'
 
 const connectDB = async (retryCount = 0) => {
   const MAX_RETRIES = 5
   const RETRY_DELAY = 2000 // 2 seconds
   
-  console.log("[TS-LOG][DB] Starting MongoDB connection process")
-  console.log("[TS-LOG][DB] MongoDB URI:", process.env.MONGO_URI ? "Set" : "Not set")
-  console.log("[TS-LOG][DB] Retry attempt:", retryCount + 1)
+  logger.functionEntry('connectDB', { retryCount, maxRetries: MAX_RETRIES })
+  logger.info('Starting MongoDB connection process', {
+    mongoUri: process.env.MONGO_URI ? 'configured' : 'missing',
+    retryAttempt: retryCount + 1
+  })
   
   try {
-    console.log("[TS-LOG][DB] Attempting to connect to MongoDB")
+    logger.debug('Attempting to connect to MongoDB', {
+      serverSelectionTimeout: '10s',
+      socketTimeout: '45s',
+      bufferCommands: false
+    })
+    
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
       socketTimeoutMS: 45000, // 45 seconds timeout
-      bufferCommands: false, // Disable mongoose buffering
+      bufferCommands: false, // Disable mongoose buffering - ensures direct DB access
     })
 
+    logger.info('🍃 MongoDB Connected successfully', {
+      host: conn.connection.host,
+      name: conn.connection.name,
+      readyState: conn.connection.readyState
+    })
     console.log(`🍃 MongoDB Connected: ${conn.connection.host}`)
-    console.log("[TS-LOG][DB] MongoDB connection successful - Host:", conn.connection.host)
     
-    // Handle connection events
+    // Handle connection events with logging
     mongoose.connection.on('error', (err) => {
-      console.error("[TS-LOG][ERROR] MongoDB connection error:", err)
+      logger.error('MongoDB connection error', err, {
+        errorName: err.name,
+        errorMessage: err.message,
+        readyState: mongoose.connection.readyState
+      })
     })
 
     mongoose.connection.on('disconnected', () => {
-      console.log("[TS-LOG][DB] MongoDB disconnected - attempting reconnection")
+      logger.warn('MongoDB disconnected - attempting reconnection', {
+        readyState: mongoose.connection.readyState,
+        retryDelay: RETRY_DELAY
+      })
       // Attempt to reconnect after a delay
       setTimeout(() => {
         if (mongoose.connection.readyState === 0) {
-          console.log("[TS-LOG][DB] Attempting to reconnect to MongoDB")
+          logger.info('Attempting to reconnect to MongoDB', { retryCount: 0 })
           connectDB(0)
         }
       }, RETRY_DELAY)
     })
 
     mongoose.connection.on('reconnected', () => {
-      console.log("[TS-LOG][DB] MongoDB reconnected successfully")
+      logger.info('MongoDB reconnected successfully', {
+        host: mongoose.connection.host,
+        readyState: mongoose.connection.readyState
+      })
+    })
+
+    // Log all database operations
+    mongoose.connection.on('connected', () => {
+      logger.info('MongoDB connection established', {
+        host: mongoose.connection.host,
+        name: mongoose.connection.name
+      })
     })
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
-      console.log("[TS-LOG][SHUTDOWN] SIGINT received, closing MongoDB connection")
+      logger.functionEntry('SIGINT handler - MongoDB shutdown')
+      logger.info('SIGINT received, closing MongoDB connection')
       await mongoose.connection.close()
+      logger.info('MongoDB connection closed through app termination')
       console.log('MongoDB connection closed through app termination')
+      logger.functionExit('SIGINT handler - MongoDB shutdown')
       process.exit(0)
     })
 
+    logger.functionExit('connectDB', { success: true, host: conn.connection.host })
+
   } catch (error) {
-    console.error("[TS-LOG][ERROR] Error connecting to MongoDB:", error.message)
-    console.error("[TS-LOG][ERROR] Full error:", error)
+    logger.error('Error connecting to MongoDB', error, {
+      errorMessage: error.message,
+      errorName: error.name,
+      retryCount,
+      maxRetries: MAX_RETRIES
+    })
     
     if (retryCount < MAX_RETRIES) {
-      console.log(`[TS-LOG][DB] Retrying connection in ${RETRY_DELAY}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`)
+      logger.warn(`Retrying connection in ${RETRY_DELAY}ms...`, {
+        attempt: retryCount + 1,
+        maxRetries: MAX_RETRIES
+      })
       setTimeout(() => {
         connectDB(retryCount + 1)
       }, RETRY_DELAY)
     } else {
-      console.error("[TS-LOG][ERROR] Max retry attempts reached. Exiting...")
+      logger.error('Max retry attempts reached. Exiting...', {
+        retryCount,
+        maxRetries: MAX_RETRIES
+      })
       process.exit(1)
     }
   }

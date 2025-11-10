@@ -10,15 +10,16 @@ import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminCourseManagement = () => {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [filterCategory, setFilterCategory] = useState('all')
   const [showModal, setShowModal] = useState(false)
   const [editingCourse, setEditingCourse] = useState(null)
+  const [trainers, setTrainers] = useState([])
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -29,7 +30,6 @@ const AdminCourseManagement = () => {
     originalPrice: 0,
     duration: '',
     level: 'beginner',
-    category: '',
     instructor: '',
     language: 'English',
     rating: 0,
@@ -45,75 +45,259 @@ const AdminCourseManagement = () => {
   })
 
   useEffect(() => {
+    logger.componentMount('AdminCourseManagement')
+    logger.functionEntry('useEffect - fetchCourses and trainers on mount')
     fetchCourses()
+    fetchTrainers()
+    return () => {
+      logger.componentUnmount('AdminCourseManagement')
+    }
   }, [])
 
-  const fetchCourses = async () => {
+  const fetchTrainers = async () => {
+    logger.functionEntry('fetchTrainers')
+    const startTime = Date.now()
     try {
       setLoading(true)
-      const response = await api.get('/courses')
-      setCourses(response.data.data || [])
+      logger.apiRequest('GET', '/trainers?isActive=true')
+      const response = await api.get('/trainers?isActive=true')
+      const fetchedTrainers = response.data.data || response.data || []
+      
+      logger.apiResponse('GET', '/trainers', response.status, { count: fetchedTrainers.length }, Date.now() - startTime)
+      
+      logger.stateChange('AdminCourseManagement', 'trainers', trainers, fetchedTrainers)
+      setTrainers(fetchedTrainers)
+      
+      logger.success('Trainers fetched successfully', { 
+        count: fetchedTrainers.length,
+        trainerNames: fetchedTrainers.map(t => t.name),
+        duration: `${Date.now() - startTime}ms`
+      })
+      
+      if (fetchedTrainers.length === 0) {
+        logger.warn('No active trainers found', {
+          message: 'Please seed trainers or ensure trainers are marked as active'
+        })
+        toast.warning('No active trainers found. Please add trainers first.')
+      }
     } catch (error) {
-      console.error('Error fetching courses:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch trainers', error, {
+        endpoint: '/trainers?isActive=true',
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
+      toast.error('Failed to fetch trainers')
+      logger.functionExit('fetchTrainers', { success: false, error: error.message, duration: `${duration}ms` })
+    } finally {
+      setLoading(false)
+      logger.functionExit('fetchTrainers', { success: true, duration: `${Date.now() - startTime}ms` })
+    }
+  }
+
+  const fetchCourses = async () => {
+    logger.functionEntry('fetchCourses')
+    const startTime = Date.now()
+    
+    try {
+      logger.debug('Starting to fetch courses', { endpoint: '/admin/courses' })
+      setLoading(true)
+      
+      logger.apiRequest('GET', '/admin/courses')
+      const response = await api.get('/admin/courses')
+      
+      const courses = response.data.data || []
+      logger.apiResponse('GET', '/admin/courses', response.status, { count: courses.length }, Date.now() - startTime)
+      
+      logger.info('Courses fetched successfully', { 
+        count: courses.length,
+        total: response.data.total,
+        duration: `${Date.now() - startTime}ms`
+      })
+      
+      logger.stateChange('AdminCourseManagement', 'courses', null, courses)
+      setCourses(courses)
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch courses', error, {
+        endpoint: '/admin/courses',
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch courses')
     } finally {
       setLoading(false)
+      logger.functionExit('fetchCourses', { duration: `${Date.now() - startTime}ms` })
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingCourse: !!editingCourse, formData })
+    const startTime = Date.now()
+    
+    // Transform formData to match backend schema
+    // Convert rating (number) and totalRatings (number) to rating object
+    // Convert instructor string to instructor object
+    // Ensure required arrays are present
+    const submitData = {
+      ...formData,
+      rating: {
+        average: formData.rating || 0,
+        count: formData.totalRatings || 0
+      },
+      studentsCount: formData.studentsEnrolled || 0,
+      // Convert instructor string to object with name
+      instructor: typeof formData.instructor === 'string' 
+        ? { name: formData.instructor || 'Instructor' }
+        : (formData.instructor || { name: 'Instructor' }),
+      // Ensure required arrays exist with at least one item (each item is required)
+      whatYouWillLearn: (formData.whatYouWillLearn && formData.whatYouWillLearn.length > 0) 
+        ? formData.whatYouWillLearn 
+        : (formData.modules?.map(m => m.title).filter(Boolean).length > 0 
+            ? formData.modules.map(m => m.title).filter(Boolean) 
+            : ['Learn valuable skills']),
+      requirements: (formData.requirements && formData.requirements.length > 0)
+        ? formData.requirements
+        : ['Basic computer knowledge']
+    }
+    
+    // Remove fields that don't exist in the schema
+    delete submitData.totalRatings
+    delete submitData.studentsEnrolled
+    delete submitData.content // This field doesn't exist in the schema
+    
     try {
+      logger.debug('Submitting course data', {
+        courseId: editingCourse?._id,
+        isUpdate: !!editingCourse,
+        ratingFormat: submitData.rating
+      })
+      
       if (editingCourse) {
-        await api.put(`/courses/${editingCourse._id}`, formData)
+        logger.apiRequest('PUT', `/admin/courses/${editingCourse._id}`, submitData)
+        await api.put(`/admin/courses/${editingCourse._id}`, submitData)
+        logger.apiResponse('PUT', `/admin/courses/${editingCourse._id}`, 200, { message: 'Course updated successfully' }, Date.now() - startTime)
         toast.success('Course updated successfully')
       } else {
-        await api.post('/courses', formData)
+        logger.apiRequest('POST', '/admin/courses', submitData)
+        await api.post('/admin/courses', submitData)
+        logger.apiResponse('POST', '/admin/courses', 200, { message: 'Course created successfully' }, Date.now() - startTime)
         toast.success('Course created successfully')
       }
       setShowModal(false)
+      setEditingCourse(null)
       resetForm()
       fetchCourses()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
+      const duration = Date.now() - startTime
+      const errorMessage = error.response?.data?.message || error.message
+      const errorDetails = error.response?.data?.errors || error.response?.data
+      
+      logger.error('Error saving course', error, {
+        formData,
+        submitData: submitData,
+        editingCourse: editingCourse?._id,
+        duration: `${duration}ms`,
+        errorMessage,
+        errorResponse: error.response?.data,
+        errorDetails
+      })
       console.error('Error saving course:', error)
-      toast.error(error.response?.data?.message || 'Failed to save course')
+      console.error('Error details:', errorDetails)
+      console.error('Submitted data:', submitData)
+      
+      // Show detailed error message
+      if (errorDetails && typeof errorDetails === 'object') {
+        const validationErrors = Object.values(errorDetails).flat().join(', ')
+        toast.error(validationErrors || errorMessage || 'Failed to save course')
+      } else {
+        toast.error(errorMessage || 'Failed to save course')
+      }
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
-  const handleEdit = (course) => {
-    setEditingCourse(course)
-    setFormData({
-      title: course.title || '',
-      slug: course.slug || '',
-      description: course.description || '',
-      shortDescription: course.shortDescription || '',
-      thumbnailUrl: course.thumbnailUrl || '',
-      price: course.price || 0,
-      originalPrice: course.originalPrice || 0,
-      duration: course.duration || '',
-      level: course.level || 'beginner',
-      category: course.category || '',
-      instructor: course.instructor || '',
-      language: course.language || 'English',
-      rating: course.rating || 0,
-      totalRatings: course.totalRatings || 0,
-      studentsEnrolled: course.studentsEnrolled || 0,
-      isPublished: course.isPublished || false,
-      isFeatured: course.isFeatured || false,
-      content: course.content || '',
-      syllabus: course.syllabus || [],
-      modules: course.modules || [],
-      tags: course.tags || [],
-      position: course.position || 0
-    })
-    setShowModal(true)
+  const handleEdit = async (course) => {
+    logger.functionEntry('handleEdit', { courseId: course._id, courseTitle: course.title })
+    const startTime = Date.now()
+    
+    try {
+      // If course data seems incomplete, fetch from admin endpoint
+      if (!course.description || !course.syllabus) {
+        logger.debug('Course data incomplete, fetching full course data', {
+          courseId: course._id,
+          hasDescription: !!course.description,
+          hasSyllabus: !!course.syllabus
+        })
+        
+        logger.apiRequest('GET', `/admin/courses/${course._id}`)
+        const response = await api.get(`/admin/courses/${course._id}`)
+        logger.apiResponse('GET', `/admin/courses/${course._id}`, response.status, { hasData: !!response.data.data })
+        
+        course = response.data.data
+        logger.info('Full course data fetched', { courseId: course._id })
+      }
+      
+      logger.debug('Setting up edit form', { courseId: course._id })
+      setEditingCourse(course)
+      setFormData({
+        title: course.title || '',
+        slug: course.slug || '',
+        description: course.description || '',
+        shortDescription: course.shortDescription || '',
+        thumbnailUrl: course.thumbnailUrl || '',
+        price: course.price || 0,
+        originalPrice: course.originalPrice || 0,
+        duration: course.duration || '',
+        level: course.level || 'beginner',
+        instructor: typeof course.instructor === 'object' ? course.instructor.name || '' : (course.instructor || ''),
+        language: course.language || 'English',
+        rating: course.rating?.average || 0,
+        totalRatings: course.rating?.count || course.totalRatings || 0,
+        studentsEnrolled: course.studentsEnrolled || course.studentsCount || 0,
+        isPublished: course.isPublished || false,
+        isFeatured: course.isFeatured || false,
+        content: course.content || '',
+        syllabus: course.syllabus || [],
+        modules: course.modules || [],
+        tags: course.tags || [],
+        position: course.position || 0
+      })
+      logger.stateChange('AdminCourseManagement', 'showModal', false, true)
+      setShowModal(true)
+      
+      logger.functionExit('handleEdit', { 
+        success: true,
+        courseId: course._id,
+        duration: `${Date.now() - startTime}ms`
+      })
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logger.error('Failed to edit course', error, {
+        courseId: course._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
+      toast.error('Failed to fetch course data')
+      
+      logger.functionExit('handleEdit', { 
+        success: false,
+        error: error.message,
+        duration: `${duration}ms`
+      })
+    }
   }
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this course?')) return
     
     try {
-      await api.delete(`/courses/${id}`)
+      await api.delete(`/admin/courses/${id}`)
       toast.success('Course deleted successfully')
       fetchCourses()
     } catch (error) {
@@ -134,7 +318,6 @@ const AdminCourseManagement = () => {
       originalPrice: 0,
       duration: '',
       level: 'beginner',
-      category: '',
       instructor: '',
       language: 'English',
       rating: 0,
@@ -156,9 +339,7 @@ const AdminCourseManagement = () => {
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'published' && course.isPublished) ||
                          (filterStatus === 'draft' && !course.isPublished)
-    const matchesCategory = filterCategory === 'all' || course.category === filterCategory
-    
-    return matchesSearch && matchesStatus && matchesCategory
+        return matchesSearch && matchesStatus
   })
 
   const getLevelColor = (level) => {
@@ -224,18 +405,6 @@ const AdminCourseManagement = () => {
               <option value="published">Published</option>
               <option value="draft">Draft</option>
             </select>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            >
-              <option value="all">All Categories</option>
-              <option value="full-stack">Full Stack</option>
-              <option value="frontend">Frontend</option>
-              <option value="backend">Backend</option>
-              <option value="data-science">Data Science</option>
-              <option value="ai-ml">AI/ML</option>
-            </select>
           </div>
         </div>
       </Card>
@@ -285,9 +454,11 @@ const AdminCourseManagement = () => {
                   <span className={`px-2 py-1 rounded text-xs font-medium ${getLevelColor(course.level)}`}>
                     {course.level}
                   </span>
-                  <span className="px-2 py-1 bg-neutral-100 text-neutral-600 rounded text-xs font-medium">
-                    {course.category}
-                  </span>
+                  {course.instructor && (
+                    <span className="px-2 py-1 bg-neutral-100 text-neutral-600 rounded text-xs font-medium">
+                      {typeof course.instructor === 'object' ? course.instructor.name : course.instructor}
+                    </span>
+                  )}
                   {course.duration && (
                     <span className="px-2 py-1 bg-neutral-100 text-neutral-600 rounded text-xs font-medium flex items-center gap-1">
                       <Clock size={12} />
@@ -300,11 +471,11 @@ const AdminCourseManagement = () => {
                   <div className="flex items-center gap-4 text-sm text-neutral-600">
                     <span className="flex items-center gap-1">
                       <Users size={16} />
-                      {course.studentsEnrolled || 0}
+                      {course.studentsEnrolled || course.studentsCount || 0}
                     </span>
                     <span className="flex items-center gap-1">
                       <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                      {course.rating?.toFixed(1) || '0.0'}
+                      {course.rating?.average?.toFixed(1) || '0.0'} ({course.rating?.count || 0})
                     </span>
                   </div>
                   <div className="text-lg font-bold text-primary-600">
@@ -344,7 +515,7 @@ const AdminCourseManagement = () => {
           resetForm()
         }}
         title={editingCourse ? 'Edit Course' : 'Create New Course'}
-        size="large"
+        size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -444,20 +615,36 @@ const AdminCourseManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Category *
+                Trainer *
               </label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                value={formData.instructor}
+                onChange={(e) => {
+                  logger.stateChange('AdminCourseManagement', 'formData.instructor', formData.instructor, e.target.value)
+                  logger.debug('Trainer selected', {
+                    selectedTrainer: e.target.value,
+                    availableTrainers: trainers.length
+                  })
+                  setFormData({ ...formData, instructor: e.target.value })
+                }}
                 className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                required
+                disabled={trainers.length === 0}
               >
-                <option value="">Select Category</option>
-                <option value="full-stack">Full Stack</option>
-                <option value="frontend">Frontend</option>
-                <option value="backend">Backend</option>
-                <option value="data-science">Data Science</option>
-                <option value="ai-ml">AI/ML</option>
+                <option value="">
+                  {trainers.length === 0 ? 'No trainers available - Please add trainers first' : 'Select Trainer'}
+                </option>
+                {trainers.map(trainer => (
+                  <option key={trainer._id} value={trainer.name}>
+                    {trainer.name} {trainer.email ? `(${trainer.email})` : ''}
+                  </option>
+                ))}
               </select>
+              {trainers.length === 0 && (
+                <p className="text-sm text-amber-600 mt-1">
+                  No active trainers found. Please go to Trainer Management to add trainers.
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">

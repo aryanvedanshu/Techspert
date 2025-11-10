@@ -55,21 +55,55 @@ const AdminUserManagement = () => {
   }, [])
 
   const fetchData = async () => {
+    logger.functionEntry('fetchData')
+    const startTime = Date.now()
+    
     try {
+      logger.debug('Starting to fetch user management data', {
+        endpoints: ['/admin/users', '/admin/enrollments', '/admin/courses']
+      })
       setLoading(true)
+      
+      logger.apiRequest('GET', '/admin/users')
+      logger.apiRequest('GET', '/admin/enrollments')
+      logger.apiRequest('GET', '/admin/courses')
+      
       const [usersRes, enrollmentsRes, coursesRes] = await Promise.all([
         api.get('/admin/users'),
-        api.get('/enrollments'),
-        api.get('/courses')
+        api.get('/admin/enrollments'),
+        api.get('/admin/courses')
       ])
 
-      setUsers(usersRes.data.data || [])
-      setEnrollments(enrollmentsRes.data.data || [])
+      const users = usersRes.data.data || []
+      const enrollments = enrollmentsRes.data.data || []
+      
+      logger.apiResponse('GET', '/admin/users', usersRes.status, { count: users.length }, Date.now() - startTime)
+      logger.apiResponse('GET', '/admin/enrollments', enrollmentsRes.status, { count: enrollments.length }, Date.now() - startTime)
+      logger.apiResponse('GET', '/admin/courses', coursesRes.status, { count: coursesRes.data.data?.length || 0 }, Date.now() - startTime)
+
+      logger.info('User management data fetched successfully', { 
+        usersCount: users.length,
+        enrollmentsCount: enrollments.length,
+        coursesCount: coursesRes.data.data?.length || 0,
+        duration: `${Date.now() - startTime}ms`
+      })
+
+      logger.stateChange('AdminUserManagement', 'users', null, users)
+      logger.stateChange('AdminUserManagement', 'enrollments', null, enrollments)
+      setUsers(users)
+      setEnrollments(enrollments)
     } catch (error) {
-      console.error('Error fetching data:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch user management data', error, {
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data,
+        errorStatus: error.response?.status
+      })
       toast.error('Failed to fetch user data')
     } finally {
       setLoading(false)
+      logger.functionExit('fetchData', { duration: `${Date.now() - startTime}ms` })
     }
   }
 

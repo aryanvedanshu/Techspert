@@ -636,7 +636,7 @@ const AdminContentManagement = () => {
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         title="Content Preview"
-        size="xl"
+        size="lg"
       >
         <div className="p-6">
           <div className="bg-neutral-50 rounded-lg p-4 mb-4">

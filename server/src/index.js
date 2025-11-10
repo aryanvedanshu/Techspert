@@ -7,6 +7,8 @@ import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import { connectDB } from './config/db.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { noCache } from './middleware/noCache.js'
+import logger from './utils/logger.js'
 
 // Import routes
 import authRoutes from './routes/auth.js'
@@ -28,23 +30,42 @@ import paymentRoutes from './routes/payments.js'
 import sessionRoutes from './routes/sessions.js'
 import analyticsRoutes from './routes/analytics.js'
 import userManagementRoutes from './routes/userManagement.js'
+import trainerRoutes from './routes/trainers.js'
 
 // Load environment variables
 dotenv.config()
 
-console.log("[TS-LOG][STARTUP] Loading environment variables and initializing server")
+logger.functionEntry('server initialization')
+logger.info('Loading environment variables and initializing server', {
+  nodeEnv: process.env.NODE_ENV,
+  port: process.env.PORT
+})
 
 const app = express()
 const PORT = process.env.PORT || 5000
 
-console.log("[TS-LOG][CONFIG] Server configuration - PORT:", PORT, "NODE_ENV:", process.env.NODE_ENV)
+logger.info('Server configuration', {
+  port: PORT,
+  nodeEnv: process.env.NODE_ENV
+})
 
 // Connect to MongoDB
-console.log("[TS-LOG][STARTUP] Connecting to MongoDB database")
+logger.functionEntry('connectDB')
+logger.info('Connecting to MongoDB database', {
+  mongoUri: process.env.MONGO_URI ? 'configured' : 'missing'
+})
 connectDB()
 
+// No-cache middleware - MUST be applied before other middleware to prevent caching
+logger.functionEntry('noCache middleware setup')
+app.use('/api', noCache)
+logger.info('No-cache middleware applied to all API routes', {
+  purpose: 'Ensure all data comes directly from MongoDB, not from cache'
+})
+
 // Security middleware
-console.log("[TS-LOG][MIDDLEWARE] Setting up security middleware (helmet, rate limiting, CORS)")
+logger.functionEntry('security middleware setup')
+logger.info('Setting up security middleware (helmet, rate limiting, CORS)')
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -100,7 +121,16 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Accept', 
+    'Origin',
+    'Cache-Control',  // Allow cache-control header for cache prevention
+    'Pragma',         // Allow pragma header for cache prevention
+    'Expires'         // Allow expires header for cache prevention
+  ],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
   optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }))
@@ -112,23 +142,52 @@ app.use(compression())
 app.use(morgan('combined'))
 
 // Body parsing middleware
-console.log("[TS-LOG][MIDDLEWARE] Setting up body parsing middleware")
+logger.functionEntry('body parsing middleware setup')
+logger.info('Setting up body parsing middleware', { limit: '10mb' })
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  console.log("[DEBUG: index.js:health:83] Health check endpoint accessed")
+  logger.functionEntry('health check endpoint')
+  logger.debug('Health check endpoint accessed', {
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  })
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
   })
+  logger.functionExit('health check endpoint')
 })
 
 // API routes
-console.log("[TS-LOG][ROUTES] Setting up API routes")
+logger.functionEntry('API routes setup')
+logger.info('Setting up API routes', {
+  routes: [
+    '/api/auth',
+    '/api/courses',
+    '/api/projects',
+    '/api/alumni',
+    '/api/admin',
+    '/api/settings',
+    '/api/team',
+    '/api/features',
+    '/api/statistics',
+    '/api/faqs',
+    '/api/page-content',
+    '/api/contact-info',
+    '/api/footer',
+    '/api/certificates',
+    '/api/enrollments',
+    '/api/payments',
+    '/api/sessions',
+    '/api/admin/analytics',
+    '/api/admin/users'
+  ]
+})
 app.use('/api/auth', authRoutes)
 app.use('/api/courses', courseRoutes)
 app.use('/api/projects', projectRoutes)
@@ -148,6 +207,7 @@ app.use('/api/payments', paymentRoutes)
 app.use('/api/sessions', sessionRoutes)
 app.use('/api/admin/analytics', analyticsRoutes)
 app.use('/api/admin/users', userManagementRoutes)
+app.use('/api/trainers', trainerRoutes)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -181,35 +241,56 @@ app.get('/', (req, res) => {
 
 // 404 handler
 app.use('*', (req, res) => {
-  console.log("[TS-LOG][ERROR] 404 error - Route not found:", req.originalUrl)
+  logger.functionEntry('404 handler')
+  logger.warn('404 error - Route not found', {
+    originalUrl: req.originalUrl,
+    method: req.method,
+    ip: req.ip
+  })
   res.status(404).json({
     success: false,
     message: 'Route not found',
     path: req.originalUrl,
   })
+  logger.functionExit('404 handler')
 })
 
 // Error handling middleware (must be last)
-console.log("[TS-LOG][MIDDLEWARE] Setting up error handling middleware")
+logger.functionEntry('error handling middleware setup')
+logger.info('Setting up error handling middleware')
 app.use(errorHandler)
 
 // Start server
-console.log("[TS-LOG][STARTUP] Starting server on port:", PORT)
+logger.functionEntry('server start')
+logger.info('Starting server', { port: PORT })
 app.listen(PORT, () => {
+  logger.info('🚀 Server running successfully', {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    apiUrl: `http://localhost:${PORT}/api`,
+    healthCheck: `http://localhost:${PORT}/health`
+  })
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)
   console.log(`🔗 API URL: http://localhost:${PORT}/api`)
   console.log(`❤️  Health check: http://localhost:${PORT}/health`)
+  logger.functionExit('server start', { success: true, port: PORT })
 })
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
+  logger.functionEntry('SIGTERM handler')
+  logger.info('SIGTERM received, shutting down gracefully')
   console.log('SIGTERM received, shutting down gracefully')
+  logger.functionExit('SIGTERM handler')
   process.exit(0)
 })
 
 process.on('SIGINT', () => {
+  logger.functionEntry('SIGINT handler')
+  logger.info('SIGINT received, shutting down gracefully')
   console.log('SIGINT received, shutting down gracefully')
+  logger.functionExit('SIGINT handler')
   process.exit(0)
 })
 

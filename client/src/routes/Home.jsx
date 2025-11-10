@@ -12,9 +12,11 @@ import CourseCard from '../components/CourseCard'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
 import FreeDemoModal from '../components/FreeDemoModal'
+import logger from '../utils/logger'
 
 const Home = () => {
-  console.log("[DEBUG: Home.jsx:component:10] Home component initializing")
+  logger.componentMount('Home')
+  logger.functionEntry('Home component initialization')
   
   const [courses, setCourses] = useState([])
   const [alumni, setAlumni] = useState([])
@@ -26,13 +28,25 @@ const Home = () => {
   const [loading, setLoading] = useState(true)
   const [showDemoModal, setShowDemoModal] = useState(false)
 
-  console.log("[DEBUG: Home.jsx:state:18] Initial state - loading:", loading)
+  logger.debug('Home component initial state', { loading })
 
   useEffect(() => {
-    console.log("[DEBUG: Home.jsx:useEffect:22] useEffect triggered - fetching data")
+    logger.functionEntry('useEffect - fetchData')
+    logger.debug('useEffect triggered - fetching data from MongoDB')
     const fetchData = async () => {
+      const startTime = Date.now()
       try {
-        console.log("[DEBUG: Home.jsx:fetchData:24] Starting parallel API calls")
+        logger.info('Starting parallel API calls to fetch all homepage data', {
+          endpoints: [
+            '/courses?featured=true&limit=6',
+            '/alumni?featured=true&limit=6',
+            '/projects?featured=true&limit=6',
+            '/settings',
+            '/features?category=homepage&featured=true',
+            '/statistics?category=homepage&featured=true',
+            '/faqs?featured=true&limit=6'
+          ]
+        })
         // Fetch all data in parallel for better performance
         const [coursesResponse, alumniResponse, projectsResponse, settingsResponse, featuresResponse, statisticsResponse, faqsResponse] = await Promise.all([
           api.get('/courses?featured=true&limit=6'),
@@ -44,15 +58,27 @@ const Home = () => {
           api.get('/faqs?featured=true&limit=6')
         ])
         
-        console.log("[DEBUG: Home.jsx:fetchData:success:33] API calls completed successfully")
-        console.log("[DEBUG: Home.jsx:fetchData:data] Data counts:", {
-          courses: coursesResponse.data.data?.length || 0,
-          alumni: alumniResponse.data.data?.length || 0,
-          projects: projectsResponse.data.data?.length || 0,
-          features: featuresResponse.data.data?.length || 0,
-          statistics: statisticsResponse.data.data?.length || 0,
-          faqs: faqsResponse.data.data?.length || 0
+        const duration = Date.now() - startTime
+        logger.info('All API calls completed successfully', {
+          duration: `${duration}ms`,
+          dataCounts: {
+            courses: coursesResponse.data.data?.length || 0,
+            alumni: alumniResponse.data.data?.length || 0,
+            projects: projectsResponse.data.data?.length || 0,
+            features: featuresResponse.data.data?.length || 0,
+            statistics: statisticsResponse.data.data?.length || 0,
+            faqs: faqsResponse.data.data?.length || 0,
+            hasSettings: !!settingsResponse.data.data
+          }
         })
+        
+        logger.stateChange('Home', 'courses', courses, coursesResponse.data.data || [])
+        logger.stateChange('Home', 'alumni', alumni, alumniResponse.data.data || [])
+        logger.stateChange('Home', 'projects', projects, projectsResponse.data.data || [])
+        logger.stateChange('Home', 'features', features, featuresResponse.data.data || [])
+        logger.stateChange('Home', 'statistics', statistics, statisticsResponse.data.data || [])
+        logger.stateChange('Home', 'faqs', faqs, faqsResponse.data.data || [])
+        logger.stateChange('Home', 'siteSettings', siteSettings, settingsResponse.data.data)
         
         setCourses(coursesResponse.data.data || [])
         setAlumni(alumniResponse.data.data || [])
@@ -62,7 +88,12 @@ const Home = () => {
         setStatistics(statisticsResponse.data.data || [])
         setFaqs(faqsResponse.data.data || [])
       } catch (error) {
-        console.error("[DEBUG: Home.jsx:fetchData:error] Error fetching data:", error)
+        const duration = Date.now() - startTime
+        logger.error('Error fetching homepage data from MongoDB', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         // Set empty arrays on error to prevent crashes
         setCourses([])
         setAlumni([])
@@ -71,6 +102,9 @@ const Home = () => {
         setStatistics([])
         setFaqs([])
         // Set default settings if fetch fails
+        logger.warn('Using fallback settings - database fetch failed', {
+          reason: 'API call failed, using default settings'
+        })
         setSiteSettings({
           homePage: {
             hero: {
@@ -89,15 +123,21 @@ const Home = () => {
           },
         })
       } finally {
-        console.log("[DEBUG: Home.jsx:fetchData:finally] Setting loading to false")
+        logger.debug('Setting loading to false', { wasLoading: loading })
+        logger.stateChange('Home', 'loading', loading, false)
         setLoading(false)
+        logger.functionExit('useEffect - fetchData')
       }
     }
 
     fetchData()
+    
+    return () => {
+      logger.componentUnmount('Home')
+    }
   }, [])
 
-  console.log("[DEBUG: Home.jsx:render] Component rendering - loading:", loading)
+  logger.debug('Home component rendering', { loading, coursesCount: courses.length })
 
   // Dynamic icon mapping from database
   const getIconComponent = (iconName) => {

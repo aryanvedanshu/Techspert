@@ -12,6 +12,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminDashboard = () => {
   const { isAuthenticated, user } = useAuth()
@@ -33,80 +34,132 @@ const AdminDashboard = () => {
 
   // Real-time data fetching
   const fetchStats = async () => {
+    logger.functionEntry('fetchStats')
+    const startTime = Date.now()
+    
     try {
-      const [coursesRes, projectsRes, alumniRes, enrollmentsRes, paymentsRes] = await Promise.all([
-        api.get('/courses'),
-        api.get('/projects'),
+      logger.debug('Starting to fetch dashboard stats', {
+        endpoints: ['/admin/dashboard', '/admin/courses', '/admin/projects', '/alumni']
+      })
+      
+      logger.apiRequest('GET', '/admin/dashboard')
+      logger.apiRequest('GET', '/admin/courses')
+      logger.apiRequest('GET', '/admin/projects')
+      logger.apiRequest('GET', '/alumni')
+      
+      const [dashboardRes, coursesRes, projectsRes, alumniRes] = await Promise.all([
+        api.get('/admin/dashboard'),
+        api.get('/admin/courses'),
+        api.get('/admin/projects'),
         api.get('/alumni'),
-        api.get('/admin/enrollments/stats'),
-        api.get('/admin/payments/stats'),
       ])
       
+      logger.apiResponse('GET', '/admin/dashboard', dashboardRes.status, dashboardRes.data, Date.now() - startTime)
+      logger.apiResponse('GET', '/admin/courses', coursesRes.status, { count: coursesRes.data.data?.length || 0 }, Date.now() - startTime)
+      logger.apiResponse('GET', '/admin/projects', projectsRes.status, { count: projectsRes.data.data?.length || 0 }, Date.now() - startTime)
+      logger.apiResponse('GET', '/alumni', alumniRes.status, { count: alumniRes.data.data?.length || 0 }, Date.now() - startTime)
+      
+      // Use dashboard stats from backend (real data)
+      const dashboardStats = dashboardRes.data.data || {}
       const courses = coursesRes.data.data || []
       const projects = projectsRes.data.data || []
       const alumni = alumniRes.data.data || []
-      const enrollmentStats = enrollmentsRes.data.data || {}
-      const paymentStats = paymentsRes.data.data || {}
       
-      // Calculate analytics
-      const totalRevenue = paymentStats.totalRevenue || 0
-      const averageRating = courses.length > 0 
-        ? courses.reduce((sum, course) => sum + (course.rating?.average || 0), 0) / courses.length 
-        : 0
+      // Calculate analytics from real data
+      const totalRevenue = dashboardStats.totalRevenue || 0
+      const averageRating = dashboardStats.averageRating || 0
       const pendingProjects = projects.filter(p => !p.isApproved).length
       
       setStats({
-        totalCourses: courses.length,
-        totalProjects: projects.length,
-        totalAlumni: alumni.length,
-        totalStudents: enrollmentStats.totalEnrollments || 0,
+        totalCourses: dashboardStats.totalCourses || courses.length,
+        totalProjects: dashboardStats.totalProjects || projects.length,
+        totalAlumni: dashboardStats.totalAlumni || alumni.length,
+        totalStudents: dashboardStats.totalStudents || 0,
         totalRevenue,
         averageRating: Math.round(averageRating * 10) / 10,
-        pendingProjects,
-        activeUsers: enrollmentStats.activeEnrollments || 0,
+        pendingProjects: dashboardStats.pendingProjects || pendingProjects,
+        activeUsers: dashboardStats.activeUsers || 0,
       })
 
-      // Generate recent activity
-      setRecentActivity([
-        {
-          id: 1,
-          type: 'course',
-          action: 'published',
-          title: 'New AI Course Published',
-          time: '2 hours ago',
-          status: 'success'
-        },
-        {
-          id: 2,
-          type: 'project',
-          action: 'submitted',
-          title: 'Student Project Submitted',
-          time: '4 hours ago',
-          status: 'pending'
-        },
-        {
-          id: 3,
-          type: 'alumni',
-          action: 'updated',
-          title: 'Alumni Profile Updated',
-          time: '1 day ago',
-          status: 'success'
-        },
-        {
-          id: 4,
-          type: 'user',
-          action: 'enrolled',
-          title: 'New Student Enrolled',
-          time: '2 days ago',
-          status: 'success'
-        }
-      ])
+      // Use real recent activity from dashboard or generate from data
+      if (dashboardStats.recentActivity && dashboardStats.recentActivity.length > 0) {
+        setRecentActivity(dashboardStats.recentActivity)
+      } else {
+        // Generate recent activity from actual data
+        const activities = []
+        
+        // Recent courses
+        const recentCourses = courses
+          .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+          .slice(0, 2)
+        recentCourses.forEach(course => {
+          activities.push({
+            id: `course-${course._id}`,
+            type: 'course',
+            action: course.isPublished ? 'published' : 'created',
+            title: course.title,
+            time: formatTimeAgo(course.updatedAt || course.createdAt),
+            status: course.isPublished ? 'success' : 'pending'
+          })
+        })
+        
+        // Recent projects
+        const recentProjects = projects
+          .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+          .slice(0, 2)
+        recentProjects.forEach(project => {
+          activities.push({
+            id: `project-${project._id}`,
+            type: 'project',
+            action: project.isApproved ? 'approved' : 'submitted',
+            title: project.title,
+            time: formatTimeAgo(project.updatedAt || project.createdAt),
+            status: project.isApproved ? 'success' : 'pending'
+          })
+        })
+        
+        setRecentActivity(activities.slice(0, 4))
+      }
+      
+      const duration = Date.now() - startTime
+      logger.info('Dashboard stats fetched successfully', {
+        totalCourses: stats.totalCourses,
+        totalProjects: stats.totalProjects,
+        totalAlumni: stats.totalAlumni,
+        duration: `${duration}ms`
+      })
+      
+      logger.functionExit('fetchStats', { duration: `${duration}ms` })
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch dashboard stats', error, {
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data,
+        errorStatus: error.response?.status
+      })
+      
+      logger.functionExit('fetchStats', { 
+        success: false,
+        error: error.message,
+        duration: `${duration}ms`
+      })
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
+  }
+
+  const formatTimeAgo = (date) => {
+    if (!date) return 'Recently'
+    const now = new Date()
+    const past = new Date(date)
+    const diffInSeconds = Math.floor((now - past) / 1000)
+    
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
   }
 
   useEffect(() => {
@@ -328,6 +381,13 @@ const AdminDashboard = () => {
       icon: Settings,
       link: '/admin/settings',
       color: 'bg-gray-500',
+    },
+    {
+      title: 'Admin Management',
+      description: 'Manage admin accounts and permissions',
+      icon: Shield,
+      link: '/admin/admins',
+      color: 'bg-red-500',
     },
   ]
 

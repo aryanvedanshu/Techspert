@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminProjectManagement = () => {
   const [projects, setProjects] = useState([])
@@ -46,19 +47,48 @@ const AdminProjectManagement = () => {
   })
 
   useEffect(() => {
+    logger.componentMount('AdminProjectManagement')
+    logger.functionEntry('useEffect - fetchProjects on mount')
     fetchProjects()
+    return () => {
+      logger.componentUnmount('AdminProjectManagement')
+    }
   }, [])
 
   const fetchProjects = async () => {
+    logger.functionEntry('fetchProjects')
+    const startTime = Date.now()
+    
     try {
+      logger.debug('Starting to fetch projects', { endpoint: '/admin/projects' })
       setLoading(true)
-      const response = await api.get('/projects')
-      setProjects(response.data.data || [])
+      
+      logger.apiRequest('GET', '/admin/projects')
+      const response = await api.get('/admin/projects')
+      
+      const projects = response.data.data || []
+      logger.apiResponse('GET', '/admin/projects', response.status, { count: projects.length }, Date.now() - startTime)
+      
+      logger.info('Projects fetched successfully', { 
+        count: projects.length,
+        total: response.data.total,
+        duration: `${Date.now() - startTime}ms`
+      })
+      
+      logger.stateChange('AdminProjectManagement', 'projects', null, projects)
+      setProjects(projects)
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch projects', error, {
+        endpoint: '/admin/projects',
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch projects')
     } finally {
       setLoading(false)
+      logger.functionExit('fetchProjects', { duration: `${Date.now() - startTime}ms` })
     }
   }
 
@@ -66,10 +96,10 @@ const AdminProjectManagement = () => {
     e.preventDefault()
     try {
       if (editingProject) {
-        await api.put(`/projects/${editingProject._id}`, formData)
+        await api.put(`/admin/projects/${editingProject._id}`, formData)
         toast.success('Project updated successfully')
       } else {
-        await api.post('/projects', formData)
+        await api.post('/admin/projects', formData)
         toast.success('Project created successfully')
       }
       setShowModal(false)
@@ -82,40 +112,50 @@ const AdminProjectManagement = () => {
     }
   }
 
-  const handleEdit = (project) => {
-    setEditingProject(project)
-    setFormData({
-      title: project.title || '',
-      description: project.description || '',
-      shortDescription: project.shortDescription || '',
-      technologies: project.technologies || [],
-      category: project.category || '',
-      difficulty: project.difficulty || 'beginner',
-      duration: project.duration || '',
-      studentName: project.studentName || '',
-      studentEmail: project.studentEmail || '',
-      studentImage: project.studentImage || '',
-      projectUrl: project.projectUrl || '',
-      githubUrl: project.githubUrl || '',
-      demoUrl: project.demoUrl || '',
-      images: project.images || [],
-      videoUrl: project.videoUrl || '',
-      features: project.features || [],
-      challenges: project.challenges || [],
-      learnings: project.learnings || [],
-      isApproved: project.isApproved || false,
-      isFeatured: project.isFeatured || false,
-      position: project.position || 0,
-      completionDate: project.completionDate || '',
-      rating: project.rating || 0
-    })
-    setShowModal(true)
+  const handleEdit = async (project) => {
+    try {
+      // If project data seems incomplete, fetch from admin endpoint
+      if (!project.description || !project.technologies) {
+        const response = await api.get(`/admin/projects/${project._id}`)
+        project = response.data.data
+      }
+      setEditingProject(project)
+      setFormData({
+        title: project.title || '',
+        description: project.description || '',
+        shortDescription: project.shortDescription || '',
+        technologies: project.technologies || [],
+        category: project.category || '',
+        difficulty: project.difficulty || 'beginner',
+        duration: project.duration || '',
+        studentName: project.studentName || '',
+        studentEmail: project.studentEmail || '',
+        studentImage: project.studentImage || '',
+        projectUrl: project.projectUrl || '',
+        githubUrl: project.githubUrl || '',
+        demoUrl: project.demoUrl || '',
+        images: project.images || [],
+        videoUrl: project.videoUrl || '',
+        features: project.features || [],
+        challenges: project.challenges || [],
+        learnings: project.learnings || [],
+        isApproved: project.isApproved || false,
+        isFeatured: project.isFeatured || false,
+        position: project.position || 0,
+        completionDate: project.completionDate || '',
+        rating: project.rating || 0
+      })
+      setShowModal(true)
+    } catch (error) {
+      console.error('Error fetching project:', error)
+      toast.error('Failed to fetch project data')
+    }
   }
 
   const handleDelete = async (projectId) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
-        await api.delete(`/projects/${projectId}`)
+        await api.delete(`/admin/projects/${projectId}`)
         toast.success('Project deleted successfully')
         fetchProjects()
       } catch (error) {
@@ -422,7 +462,7 @@ const AdminProjectManagement = () => {
           resetForm()
         }}
         title={editingProject ? 'Edit Project' : 'Add New Project'}
-        size="xl"
+        size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

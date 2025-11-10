@@ -42,9 +42,9 @@ const Modal = ({
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-7xl',
+    lg: 'max-w-xl',
+    xl: 'max-w-2xl',
+    full: 'max-w-4xl',
   }
 
   return (
@@ -88,7 +88,7 @@ const Modal = ({
             )}
 
             {/* Content */}
-            <div className={clsx('p-6', !title && 'pt-6')}>
+            <div className={clsx('p-6', !title && 'pt-6', 'max-h-[calc(100vh-200px)] overflow-y-auto')}>
               {children}
             </div>
           </motion.div>

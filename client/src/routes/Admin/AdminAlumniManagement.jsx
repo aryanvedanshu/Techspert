@@ -56,7 +56,7 @@ const AdminAlumniManagement = () => {
   const fetchAlumni = async () => {
     try {
       setLoading(true)
-      const response = await api.get('/alumni')
+      const response = await api.get('/admin/alumni')
       setAlumni(response.data.data || [])
     } catch (error) {
       console.error('Error fetching alumni:', error)
@@ -70,10 +70,10 @@ const AdminAlumniManagement = () => {
     e.preventDefault()
     try {
       if (editingAlumni) {
-        await api.put(`/alumni/${editingAlumni._id}`, formData)
+        await api.put(`/admin/alumni/${editingAlumni._id}`, formData)
         toast.success('Alumni profile updated successfully')
       } else {
-        await api.post('/alumni', formData)
+        await api.post('/admin/alumni', formData)
         toast.success('Alumni profile created successfully')
       }
       setShowModal(false)
@@ -122,7 +122,7 @@ const AdminAlumniManagement = () => {
   const handleDelete = async (alumniId) => {
     if (window.confirm('Are you sure you want to delete this alumni profile?')) {
       try {
-        await api.delete(`/alumni/${alumniId}`)
+        await api.delete(`/admin/alumni/${alumniId}`)
         toast.success('Alumni profile deleted successfully')
         fetchAlumni()
       } catch (error) {
@@ -419,7 +419,7 @@ const AdminAlumniManagement = () => {
           resetForm()
         }}
         title={editingAlumni ? 'Edit Alumni Profile' : 'Add New Alumni Profile'}
-        size="xl"
+        size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

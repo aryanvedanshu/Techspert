@@ -27,6 +27,8 @@ import AdminContactInfo from './routes/Admin/AdminContactInfo'
 import AdminAnalytics from './routes/Admin/AdminAnalytics'
 import AdminUserManagement from './routes/Admin/AdminUserManagement'
 import AdminContentManagement from './routes/Admin/AdminContentManagement'
+import AdminTrainerManagement from './routes/Admin/AdminTrainerManagement'
+import AdminAdminManagement from './routes/Admin/AdminAdminManagement'
 
 function App() {
   const location = useLocation()
@@ -65,6 +67,8 @@ function App() {
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/users" element={<AdminUserManagement />} />
               <Route path="/admin/content" element={<AdminContentManagement />} />
+              <Route path="/admin/trainers" element={<AdminTrainerManagement />} />
+              <Route path="/admin/admins" element={<AdminAdminManagement />} />
             </Routes>
           </main>
           <Footer />

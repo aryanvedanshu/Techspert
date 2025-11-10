@@ -109,6 +109,35 @@ const AdminSettings = () => {
   }
 
   const handleInputChange = (section, field, value) => {
+    // Handle top-level fields (when section is empty or null)
+    if (!section || section === '') {
+      setSettings(prev => ({
+        ...prev,
+        [field]: value
+      }))
+      return
+    }
+    
+    // Handle nested fields with dot notation (e.g., 'homePage.hero')
+    if (section.includes('.')) {
+      const parts = section.split('.')
+      setSettings(prev => {
+        const newSettings = { ...prev }
+        let current = newSettings
+        for (let i = 0; i < parts.length - 1; i++) {
+          current[parts[i]] = { ...current[parts[i]] }
+          current = current[parts[i]]
+        }
+        current[parts[parts.length - 1]] = {
+          ...current[parts[parts.length - 1]],
+          [field]: value
+        }
+        return newSettings
+      })
+      return
+    }
+    
+    // Handle regular nested fields
     setSettings(prev => ({
       ...prev,
       [section]: {
@@ -213,7 +242,7 @@ const AdminSettings = () => {
                         <input
                           type="text"
                           value={settings?.siteName || ''}
-                          onChange={(e) => handleInputChange('siteName', e.target.value)}
+                          onChange={(e) => handleInputChange('', 'siteName', e.target.value)}
                           className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                         />
                       </div>
@@ -225,7 +254,7 @@ const AdminSettings = () => {
                         <input
                           type="text"
                           value={settings?.siteTagline || ''}
-                          onChange={(e) => handleInputChange('siteTagline', e.target.value)}
+                          onChange={(e) => handleInputChange('', 'siteTagline', e.target.value)}
                           className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                         />
                       </div>
@@ -237,7 +266,7 @@ const AdminSettings = () => {
                       </label>
                       <textarea
                         value={settings?.siteDescription || ''}
-                        onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                        onChange={(e) => handleInputChange('', 'siteDescription', e.target.value)}
                         rows={3}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                       />
@@ -368,7 +397,7 @@ const AdminSettings = () => {
                       <input
                         type="text"
                         value={settings?.homePage?.hero?.title || ''}
-                        onChange={(e) => handleInputChange('homePage', 'hero', { ...settings?.homePage?.hero, title: e.target.value })}
+                        onChange={(e) => handleInputChange('homePage.hero', 'title', e.target.value)}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                       />
                     </div>
@@ -379,7 +408,7 @@ const AdminSettings = () => {
                       </label>
                       <textarea
                         value={settings?.homePage?.hero?.subtitle || ''}
-                        onChange={(e) => handleInputChange('homePage', 'hero', { ...settings?.homePage?.hero, subtitle: e.target.value })}
+                        onChange={(e) => handleInputChange('homePage.hero', 'subtitle', e.target.value)}
                         rows={3}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                       />
@@ -392,7 +421,7 @@ const AdminSettings = () => {
                       <input
                         type="text"
                         value={settings?.homePage?.hero?.ctaText || ''}
-                        onChange={(e) => handleInputChange('homePage', 'hero', { ...settings?.homePage?.hero, ctaText: e.target.value })}
+                        onChange={(e) => handleInputChange('homePage.hero', 'ctaText', e.target.value)}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                       />
                     </div>

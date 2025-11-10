@@ -1,51 +1,87 @@
 // Global error handling middleware
+import logger from '../utils/logger.js'
 
 export const errorHandler = (err, req, res, next) => {
-  console.log("[DEBUG: errorHandler.js:errorHandler:3] Global error handler triggered")
+  logger.functionEntry('errorHandler', {
+    errorName: err.name,
+    errorMessage: err.message,
+    url: req.originalUrl,
+    method: req.method,
+    statusCode: err.statusCode
+  })
+
   let error = { ...err }
   error.message = err.message
 
-  // Log error
-  console.error("[DEBUG: errorHandler.js:error:8] Error details:", {
+  // Log error with full context
+  logger.error('Global error handler triggered', err, {
     name: err.name,
     message: err.message,
     statusCode: err.statusCode,
     stack: err.stack,
     url: req.originalUrl,
-    method: req.method
+    method: req.method,
+    body: req.body,
+    params: req.params,
+    query: req.query,
+    user: req.user?._id || req.admin?._id,
+    ip: req.ip
   })
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
-    console.log("[DEBUG: errorHandler.js:castError:19] CastError - Resource not found")
+    logger.warn('CastError - Resource not found', {
+      errorName: err.name,
+      errorValue: err.value,
+      errorKind: err.kind,
+      url: req.originalUrl
+    })
     const message = 'Resource not found'
     error = { message, statusCode: 404 }
   }
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    console.log("[DEBUG: errorHandler.js:duplicateKey:25] Duplicate key error")
     const field = Object.keys(err.keyValue)[0]
+    logger.warn('Duplicate key error', {
+      errorCode: err.code,
+      duplicateField: field,
+      duplicateValue: err.keyValue[field],
+      url: req.originalUrl
+    })
     const message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`
     error = { message, statusCode: 400 }
   }
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
-    console.log("[DEBUG: errorHandler.js:validationError:31] Validation error")
-    const message = Object.values(err.errors).map(val => val.message).join(', ')
+    const validationErrors = Object.values(err.errors).map(val => val.message)
+    logger.warn('Validation error', {
+      errorName: err.name,
+      validationErrors,
+      url: req.originalUrl
+    })
+    const message = validationErrors.join(', ')
     error = { message, statusCode: 400 }
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    console.log("[DEBUG: errorHandler.js:jwtError:37] JWT error - Invalid token")
+    logger.warn('JWT error - Invalid token', {
+      errorName: err.name,
+      errorMessage: err.message,
+      url: req.originalUrl
+    })
     const message = 'Invalid token'
     error = { message, statusCode: 401 }
   }
 
   if (err.name === 'TokenExpiredError') {
-    console.log("[DEBUG: errorHandler.js:jwtExpired:42] JWT error - Token expired")
+    logger.warn('JWT error - Token expired', {
+      errorName: err.name,
+      expiredAt: err.expiredAt,
+      url: req.originalUrl
+    })
     const message = 'Token expired'
     error = { message, statusCode: 401 }
   }
@@ -65,7 +101,20 @@ export const errorHandler = (err, req, res, next) => {
   const statusCode = error.statusCode || 500
   const message = error.message || 'Server Error'
 
-  console.log("[DEBUG: errorHandler.js:response:62] Sending error response:", { statusCode, message })
+  logger.info('Sending error response', {
+    statusCode,
+    message,
+    url: req.originalUrl,
+    method: req.method,
+    hasStack: !!err.stack
+  })
+
+  logger.functionExit('errorHandler', {
+    statusCode,
+    message,
+    errorName: err.name
+  })
+
   res.status(statusCode).json({
     success: false,
     message,
@@ -75,6 +124,11 @@ export const errorHandler = (err, req, res, next) => {
 
 // 404 handler
 export const notFound = (req, res, next) => {
+  logger.warn('Route not found', {
+    url: req.originalUrl,
+    method: req.method,
+    ip: req.ip
+  })
   const error = new Error(`Not Found - ${req.originalUrl}`)
   res.status(404)
   next(error)
@@ -82,5 +136,19 @@ export const notFound = (req, res, next) => {
 
 // Async error handler wrapper
 export const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next)
+  const functionName = fn.name || 'anonymous'
+  logger.debug('Async handler wrapper called', {
+    function: functionName,
+    url: req.originalUrl,
+    method: req.method
+  })
+  
+  Promise.resolve(fn(req, res, next)).catch((error) => {
+    logger.error('Async handler error', error, {
+      function: functionName,
+      url: req.originalUrl,
+      method: req.method
+    })
+    next(error)
+  })
 }

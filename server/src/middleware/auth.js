@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 import Admin from '../models/Admin.js'
 import authLogger from '../utils/authLogger.js'
+import logger from '../utils/logger.js'
 
 // Verify JWT token for users
 export const authenticateToken = async (req, res, next) => {
@@ -86,7 +87,14 @@ export const authenticateToken = async (req, res, next) => {
     req.user = user
     next()
   } catch (error) {
+    const duration = Date.now() - startTime
     if (error.name === 'JsonWebTokenError') {
+      logger.warn('Invalid JWT token', {
+        route: req.path,
+        method: req.method,
+        errorName: error.name,
+        duration: `${duration}ms`
+      })
       return res.status(401).json({
         success: false,
         message: 'Invalid token',
@@ -94,13 +102,26 @@ export const authenticateToken = async (req, res, next) => {
     }
     
     if (error.name === 'TokenExpiredError') {
+      logger.warn('JWT token expired', {
+        route: req.path,
+        method: req.method,
+        errorName: error.name,
+        duration: `${duration}ms`
+      })
       return res.status(401).json({
         success: false,
         message: 'Token expired',
       })
     }
 
-    console.error('Auth middleware error:', error)
+    logger.error('Auth middleware error', error, {
+      route: req.path,
+      method: req.method,
+      errorName: error.name,
+      errorMessage: error.message,
+      operation: 'authenticateToken',
+      duration: `${duration}ms`
+    })
     return res.status(500).json({
       success: false,
       message: 'Authentication error',
@@ -207,7 +228,15 @@ export const authenticateAdmin = async (req, res, next) => {
       })
     }
 
-    console.error('Auth middleware error:', error)
+    const duration = Date.now() - startTime
+    logger.error('Auth middleware error', error, {
+      route: req.path,
+      method: req.method,
+      errorName: error.name,
+      errorMessage: error.message,
+      operation: 'authenticateAdmin',
+      duration: `${duration}ms`
+    })
     return res.status(500).json({
       success: false,
       message: 'Authentication error',
@@ -218,62 +247,191 @@ export const authenticateAdmin = async (req, res, next) => {
 // Check if admin has specific permission
 export const requirePermission = (resource, action) => {
   return (req, res, next) => {
-    if (!req.admin) {
-      return res.status(401).json({
+    const startTime = Date.now()
+    logger.functionEntry('requirePermission', { resource, action, route: req.path })
+    
+    try {
+      if (!req.admin) {
+        logger.warn('Permission check failed: no admin in request', {
+          resource,
+          action,
+          route: req.path
+        })
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        })
+      }
+
+      const hasPermission = req.admin.hasPermission(resource, action)
+      logger.debug('Permission check result', {
+        resource,
+        action,
+        adminId: req.admin._id,
+        hasPermission,
+        route: req.path
+      })
+
+      if (!hasPermission) {
+        const duration = Date.now() - startTime
+        logger.warn('Insufficient permissions', {
+          resource,
+          action,
+          adminId: req.admin._id,
+          adminRole: req.admin.role,
+          route: req.path,
+          duration: `${duration}ms`
+        })
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions',
+        })
+      }
+
+      const duration = Date.now() - startTime
+      logger.success('Permission check passed', {
+        resource,
+        action,
+        adminId: req.admin._id,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('requirePermission', { success: true, duration: `${duration}ms` })
+      next()
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logger.error('Permission check error', error, {
+        resource,
+        action,
+        route: req.path,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('requirePermission', { success: false, error: error.message, duration: `${duration}ms` })
+      return res.status(500).json({
         success: false,
-        message: 'Authentication required',
+        message: 'Permission check error',
       })
     }
-
-    if (!req.admin.hasPermission(resource, action)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient permissions',
-      })
-    }
-
-    next()
   }
 }
 
 // Check if admin has specific role
 export const requireRole = (...roles) => {
   return (req, res, next) => {
-    if (!req.admin) {
-      return res.status(401).json({
+    const startTime = Date.now()
+    logger.functionEntry('requireRole', { requiredRoles: roles, route: req.path })
+    
+    try {
+      if (!req.admin) {
+        logger.warn('Role check failed: no admin in request', {
+          requiredRoles: roles,
+          route: req.path
+        })
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+        })
+      }
+
+      const hasRole = roles.includes(req.admin.role)
+      logger.debug('Role check result', {
+        requiredRoles: roles,
+        adminRole: req.admin.role,
+        hasRole,
+        adminId: req.admin._id,
+        route: req.path
+      })
+
+      if (!hasRole) {
+        const duration = Date.now() - startTime
+        logger.warn('Insufficient role privileges', {
+          requiredRoles: roles,
+          adminRole: req.admin.role,
+          adminId: req.admin._id,
+          route: req.path,
+          duration: `${duration}ms`
+        })
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient role privileges',
+        })
+      }
+
+      const duration = Date.now() - startTime
+      logger.success('Role check passed', {
+        requiredRoles: roles,
+        adminRole: req.admin.role,
+        adminId: req.admin._id,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('requireRole', { success: true, duration: `${duration}ms` })
+      next()
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logger.error('Role check error', error, {
+        requiredRoles: roles,
+        route: req.path,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('requireRole', { success: false, error: error.message, duration: `${duration}ms` })
+      return res.status(500).json({
         success: false,
-        message: 'Authentication required',
+        message: 'Role check error',
       })
     }
-
-    if (!roles.includes(req.admin.role)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Insufficient role privileges',
-      })
-    }
-
-    next()
   }
 }
 
 // Optional authentication (doesn't fail if no token)
 export const optionalAuth = async (req, res, next) => {
+  const startTime = Date.now()
+  logger.functionEntry('optionalAuth', { route: req.path, hasAuthHeader: !!req.headers.authorization })
+  
   try {
     const authHeader = req.headers.authorization
     const token = authHeader && authHeader.split(' ')[1]
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET)
-      const admin = await Admin.findById(decoded.id).select('-password')
-      
-      if (admin && admin.isActive && !admin.isLocked) {
-        req.admin = admin
+      logger.debug('Optional auth: token found, attempting verification', { route: req.path })
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        logger.dbOperation('findById', 'Admin', decoded.id)
+        const admin = await Admin.findById(decoded.id).select('-password')
+        
+        if (admin && admin.isActive && !admin.isLocked) {
+          req.admin = admin
+          const duration = Date.now() - startTime
+          logger.success('Optional auth: admin authenticated', {
+            adminId: admin._id,
+            role: admin.role,
+            duration: `${duration}ms`
+          })
+        } else {
+          logger.debug('Optional auth: admin not found or inactive', {
+            adminFound: !!admin,
+            isActive: admin?.isActive,
+            isLocked: admin?.isLocked
+          })
+        }
+      } catch (tokenError) {
+        logger.debug('Optional auth: token verification failed, continuing without auth', {
+          errorName: tokenError.name,
+          errorMessage: tokenError.message
+        })
       }
+    } else {
+      logger.debug('Optional auth: no token provided, continuing without auth', { route: req.path })
     }
 
+    const duration = Date.now() - startTime
+    logger.functionExit('optionalAuth', { success: true, hasAdmin: !!req.admin, duration: `${duration}ms` })
     next()
   } catch (error) {
+    const duration = Date.now() - startTime
+    logger.error('Optional auth error', error, {
+      route: req.path,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('optionalAuth', { success: false, error: error.message, duration: `${duration}ms` })
     // Continue without authentication for optional auth
     next()
   }
@@ -287,37 +445,89 @@ export const authorize = requireRole
 
 // Rate limiting for login attempts
 export const loginRateLimit = (req, res, next) => {
-  // This would typically be implemented with a Redis store
-  // For now, we'll use a simple in-memory store (not recommended for production)
-  const attempts = req.app.locals.loginAttempts || {}
-  const ip = req.ip || req.connection.remoteAddress
-  const now = Date.now()
-  const windowMs = 15 * 60 * 1000 // 15 minutes
-  const maxAttempts = 5
+  const startTime = Date.now()
+  logger.functionEntry('loginRateLimit', { route: req.path, ip: req.ip })
+  
+  try {
+    // This would typically be implemented with a Redis store
+    // For now, we'll use a simple in-memory store (not recommended for production)
+    const attempts = req.app.locals.loginAttempts || {}
+    const ip = req.ip || req.connection.remoteAddress
+    const now = Date.now()
+    const windowMs = 15 * 60 * 1000 // 15 minutes
+    const maxAttempts = 5
 
-  // Clean old attempts
-  Object.keys(attempts).forEach(key => {
-    if (attempts[key].timestamp < now - windowMs) {
-      delete attempts[key]
-    }
-  })
-
-  // Check current attempts
-  if (attempts[ip] && attempts[ip].count >= maxAttempts) {
-    return res.status(429).json({
-      success: false,
-      message: 'Too many login attempts. Please try again later.',
-      retryAfter: Math.ceil((attempts[ip].timestamp + windowMs - now) / 1000),
+    logger.debug('Rate limit check', {
+      ip,
+      currentAttempts: attempts[ip]?.count || 0,
+      maxAttempts,
+      windowMs
     })
-  }
 
-  // Increment attempts
-  if (!attempts[ip]) {
-    attempts[ip] = { count: 1, timestamp: now }
-  } else {
-    attempts[ip].count++
-  }
+    // Clean old attempts
+    const beforeClean = Object.keys(attempts).length
+    Object.keys(attempts).forEach(key => {
+      if (attempts[key].timestamp < now - windowMs) {
+        delete attempts[key]
+      }
+    })
+    const afterClean = Object.keys(attempts).length
+    if (beforeClean !== afterClean) {
+      logger.debug('Cleaned old rate limit entries', {
+        before: beforeClean,
+        after: afterClean,
+        removed: beforeClean - afterClean
+      })
+    }
 
-  req.app.locals.loginAttempts = attempts
-  next()
+    // Check current attempts
+    if (attempts[ip] && attempts[ip].count >= maxAttempts) {
+      const retryAfter = Math.ceil((attempts[ip].timestamp + windowMs - now) / 1000)
+      const duration = Date.now() - startTime
+      logger.warn('Rate limit exceeded', {
+        ip,
+        attempts: attempts[ip].count,
+        maxAttempts,
+        retryAfter,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('loginRateLimit', { success: false, rateLimited: true, duration: `${duration}ms` })
+      return res.status(429).json({
+        success: false,
+        message: 'Too many login attempts. Please try again later.',
+        retryAfter,
+      })
+    }
+
+    // Increment attempts
+    if (!attempts[ip]) {
+      attempts[ip] = { count: 1, timestamp: now }
+      logger.debug('New rate limit entry created', { ip, count: 1 })
+    } else {
+      attempts[ip].count++
+      logger.debug('Rate limit count incremented', { ip, count: attempts[ip].count })
+    }
+
+    req.app.locals.loginAttempts = attempts
+    
+    const duration = Date.now() - startTime
+    logger.success('Rate limit check passed', {
+      ip,
+      attempts: attempts[ip].count,
+      maxAttempts,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('loginRateLimit', { success: true, duration: `${duration}ms` })
+    next()
+  } catch (error) {
+    const duration = Date.now() - startTime
+    logger.error('Rate limit check error', error, {
+      ip: req.ip,
+      route: req.path,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('loginRateLimit', { success: false, error: error.message, duration: `${duration}ms` })
+    // Allow request to proceed if rate limiting fails
+    next()
+  }
 }
