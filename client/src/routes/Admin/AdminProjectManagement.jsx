@@ -94,31 +94,57 @@ const AdminProjectManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingProject: editingProject?._id })
+    const startTime = Date.now()
     try {
       if (editingProject) {
+        logger.apiRequest('PUT', `/admin/projects/${editingProject._id}`, formData)
         await api.put(`/admin/projects/${editingProject._id}`, formData)
+        logger.apiResponse('PUT', `/admin/projects/${editingProject._id}`, 200, { message: 'Project updated' }, Date.now() - startTime)
         toast.success('Project updated successfully')
       } else {
+        logger.apiRequest('POST', '/admin/projects', formData)
         await api.post('/admin/projects', formData)
+        logger.apiResponse('POST', '/admin/projects', 200, { message: 'Project created' }, Date.now() - startTime)
         toast.success('Project created successfully')
       }
       setShowModal(false)
       setEditingProject(null)
       resetForm()
       fetchProjects()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving project:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save project', error, {
+        formData,
+        editingProject: editingProject?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to save project')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
   const handleEdit = async (project) => {
+    logger.functionEntry('handleEdit', { projectId: project._id, projectTitle: project.title })
+    const startTime = Date.now()
     try {
       // If project data seems incomplete, fetch from admin endpoint
       if (!project.description || !project.technologies) {
+        logger.debug('Project data incomplete, fetching full project data', {
+          projectId: project._id,
+          hasDescription: !!project.description,
+          hasTechnologies: !!project.technologies
+        })
+        logger.apiRequest('GET', `/admin/projects/${project._id}`)
         const response = await api.get(`/admin/projects/${project._id}`)
+        logger.apiResponse('GET', `/admin/projects/${project._id}`, response.status, { hasData: !!response.data.data })
         project = response.data.data
+        logger.info('Full project data fetched', { projectId: project._id })
       }
+      logger.debug('Setting up edit form', { projectId: project._id })
       setEditingProject(project)
       setFormData({
         title: project.title || '',
@@ -146,33 +172,65 @@ const AdminProjectManagement = () => {
         rating: project.rating || 0
       })
       setShowModal(true)
+      logger.functionExit('handleEdit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error fetching project:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch project', error, {
+        projectId: project._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch project data')
+      logger.functionExit('handleEdit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
   const handleDelete = async (projectId) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
+      logger.functionEntry('handleDelete', { projectId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/admin/projects/${projectId}`)
         await api.delete(`/admin/projects/${projectId}`)
+        logger.apiResponse('DELETE', `/admin/projects/${projectId}`, 200, { message: 'Project deleted' }, Date.now() - startTime)
         toast.success('Project deleted successfully')
         fetchProjects()
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting project:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete project', error, {
+          projectId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         toast.error('Failed to delete project')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }
 
   const handleApprove = async (projectId) => {
+    logger.functionEntry('handleApprove', { projectId })
+    const startTime = Date.now()
     try {
-      await api.put(`/projects/${projectId}`, { isApproved: true })
+      logger.apiRequest('PUT', `/admin/projects/${projectId}`, { isApproved: true })
+      await api.put(`/admin/projects/${projectId}`, { isApproved: true })
+      logger.apiResponse('PUT', `/admin/projects/${projectId}`, 200, { message: 'Project approved' }, Date.now() - startTime)
       toast.success('Project approved successfully')
       fetchProjects()
+      logger.functionExit('handleApprove', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error approving project:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to approve project', error, {
+        projectId,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to approve project')
+      logger.functionExit('handleApprove', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 

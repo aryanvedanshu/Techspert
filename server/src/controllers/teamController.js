@@ -1,11 +1,16 @@
 import Team from '../models/Team.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import logger from '../utils/logger.js'
 
 // @desc    Get all team members
 // @route   GET /api/team
 // @access  Public
 export const getTeam = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: teamController.js:getTeam:7] Getting team members")
+  const startTime = Date.now()
+  logger.functionEntry('getTeam', {
+    query: req.query
+  })
+  
   const {
     page = 1,
     limit = 12,
@@ -16,20 +21,20 @@ export const getTeam = asyncHandler(async (req, res) => {
     order = 'asc',
   } = req.query
 
-  console.log("[DEBUG: teamController.js:getTeam:query:17] Query parameters:", { page, limit, department, featured, search, sort, order })
+  logger.debug('Query parameters', { page, limit, department, featured, search, sort, order })
 
   // Build query
   let query = { isActive: true }
-  console.log("[DEBUG: teamController.js:getTeam:query:19] Base query:", query)
+  logger.debug('Base query built', { query })
 
   if (department) {
     query.department = department
-    console.log("[DEBUG: teamController.js:getTeam:filter:26] Added department filter:", department)
+    logger.debug('Added department filter', { department })
   }
 
   if (featured === 'true') {
     query.isFeatured = true
-    console.log("[DEBUG: teamController.js:getTeam:filter:30] Added featured filter")
+    logger.debug('Added featured filter')
   }
 
   if (search) {
@@ -39,16 +44,16 @@ export const getTeam = asyncHandler(async (req, res) => {
       { bio: { $regex: search, $options: 'i' } },
       { specialties: { $in: [new RegExp(search, 'i')] } },
     ]
-    console.log("[DEBUG: teamController.js:getTeam:filter:34] Added search filter:", search)
+    logger.debug('Added search filter', { search })
   }
 
   // Build sort object
   const sortOrder = order === 'desc' ? -1 : 1
   const sortObj = { [sort]: sortOrder }
-  console.log("[DEBUG: teamController.js:getTeam:sort:44] Sort object:", sortObj)
+  logger.debug('Sort object built', { sortObj })
 
   // Execute query
-  console.log("[DEBUG: teamController.js:getTeam:db:47] Executing database query")
+  logger.dbOperation('find', 'Team', query)
   const team = await Team.find(query)
     .sort(sortObj)
     .limit(limit * 1)
@@ -56,7 +61,19 @@ export const getTeam = asyncHandler(async (req, res) => {
     .lean()
 
   const total = await Team.countDocuments(query)
-  console.log("[DEBUG: teamController.js:getTeam:db:54] Query results - Found:", team.length, "Total:", total)
+  
+  const duration = Date.now() - startTime
+  logger.success('Team members fetched successfully', {
+    count: team.length,
+    total,
+    page: parseInt(page),
+    duration: `${duration}ms`
+  })
+  logger.functionExit('getTeam', {
+    success: true,
+    count: team.length,
+    duration: `${duration}ms`
+  })
 
   res.json({
     success: true,

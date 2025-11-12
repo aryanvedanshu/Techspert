@@ -5,6 +5,14 @@ const connectDB = async (retryCount = 0) => {
   const MAX_RETRIES = 5
   const RETRY_DELAY = 2000 // 2 seconds
   
+  // Skip connection in test environment if already connected
+  if (process.env.NODE_ENV === 'test' && mongoose.connection.readyState !== 0) {
+    logger.debug('MongoDB already connected in test environment', {
+      readyState: mongoose.connection.readyState
+    })
+    return
+  }
+  
   logger.functionEntry('connectDB', { retryCount, maxRetries: MAX_RETRIES })
   logger.info('Starting MongoDB connection process', {
     mongoUri: process.env.MONGO_URI ? 'configured' : 'missing',
@@ -29,9 +37,9 @@ const connectDB = async (retryCount = 0) => {
     logger.info('🍃 MongoDB Connected successfully', {
       host: conn.connection.host,
       name: conn.connection.name,
-      readyState: conn.connection.readyState
+      readyState: conn.connection.readyState,
+      message: `🍃 MongoDB Connected: ${conn.connection.host}`
     })
-    console.log(`🍃 MongoDB Connected: ${conn.connection.host}`)
     
     // Handle connection events with logging
     mongoose.connection.on('error', (err) => {
@@ -77,7 +85,6 @@ const connectDB = async (retryCount = 0) => {
       logger.info('SIGINT received, closing MongoDB connection')
       await mongoose.connection.close()
       logger.info('MongoDB connection closed through app termination')
-      console.log('MongoDB connection closed through app termination')
       logger.functionExit('SIGINT handler - MongoDB shutdown')
       process.exit(0)
     })

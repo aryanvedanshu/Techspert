@@ -1,19 +1,22 @@
 import Footer from '../models/Footer.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import logger from '../utils/logger.js'
 
 // @desc    Get footer data
 // @route   GET /api/footer
 // @access  Public
 export const getFooter = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: footerController.js:getFooter:7] Getting footer data")
+  const startTime = Date.now()
+  logger.functionEntry('getFooter')
   
   try {
     // Get the active footer configuration
+    logger.dbOperation('findOne', 'Footer', { isActive: true })
     let footer = await Footer.findOne({ isActive: true })
     
     // If no footer exists, create a default one
     if (!footer) {
-      console.log("[DEBUG: footerController.js:getFooter:12] No footer found, creating default")
+      logger.debug('No footer found, creating default footer')
       footer = new Footer({
         brand: {
           name: 'Techspert',
@@ -54,20 +57,33 @@ export const getFooter = asyncHandler(async (req, res) => {
       })
       
       await footer.save()
-      console.log("[DEBUG: footerController.js:getFooter:45] Default footer created and saved")
+      logger.success('Default footer created and saved', { footerId: footer._id })
     }
 
-    console.log("[DEBUG: footerController.js:getFooter:success:47] Footer data retrieved successfully")
+    const duration = Date.now() - startTime
+    logger.success('Footer data retrieved successfully', {
+      footerId: footer._id,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getFooter', {
+      success: true,
+      duration: `${duration}ms`
+    })
     res.json({
       success: true,
       data: footer
     })
   } catch (error) {
-    console.error("[DEBUG: footerController.js:getFooter:error:50] Error getting footer:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving footer data'
+    const duration = Date.now() - startTime
+    logger.error('Error getting footer', error, {
+      duration: `${duration}ms`
     })
+    logger.functionExit('getFooter', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -75,25 +91,49 @@ export const getFooter = asyncHandler(async (req, res) => {
 // @route   PUT /api/footer
 // @access  Private (Admin only)
 export const updateFooter = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: footerController.js:updateFooter:58] Updating footer data")
+  const startTime = Date.now()
+  logger.functionEntry('updateFooter', {
+    bodyKeys: Object.keys(req.body),
+    adminId: req.admin?._id
+  })
   
   try {
     const footerData = req.body
-    console.log("[DEBUG: footerController.js:updateFooter:61] Footer update data:", footerData)
+    logger.debug('Footer update data received', { bodyKeys: Object.keys(footerData) })
 
     // Find existing footer or create new one
+    logger.dbOperation('findOne', 'Footer', { isActive: true })
     let footer = await Footer.findOne({ isActive: true })
     
     if (footer) {
       // Update existing footer
       Object.assign(footer, footerData)
       await footer.save()
-      console.log("[DEBUG: footerController.js:updateFooter:success:68] Footer updated successfully")
+      const duration = Date.now() - startTime
+      logger.success('Footer updated successfully', {
+        footerId: footer._id,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('updateFooter', {
+        success: true,
+        footerId: footer._id,
+        duration: `${duration}ms`
+      })
     } else {
       // Create new footer
+      logger.dbOperation('create', 'Footer', footerData)
       footer = new Footer(footerData)
       await footer.save()
-      console.log("[DEBUG: footerController.js:updateFooter:success:72] New footer created successfully")
+      const duration = Date.now() - startTime
+      logger.success('New footer created successfully', {
+        footerId: footer._id,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('updateFooter', {
+        success: true,
+        footerId: footer._id,
+        duration: `${duration}ms`
+      })
     }
 
     res.json({
@@ -102,10 +142,16 @@ export const updateFooter = asyncHandler(async (req, res) => {
       data: footer
     })
   } catch (error) {
-    console.error("[DEBUG: footerController.js:updateFooter:error:80] Error updating footer:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Error updating footer data'
+    const duration = Date.now() - startTime
+    logger.error('Error updating footer', error, {
+      body: req.body,
+      duration: `${duration}ms`
     })
+    logger.functionExit('updateFooter', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })

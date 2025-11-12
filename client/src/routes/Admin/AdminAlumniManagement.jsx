@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminAlumniManagement = () => {
   const [alumni, setAlumni] = useState([])
@@ -54,13 +55,25 @@ const AdminAlumniManagement = () => {
   }, [])
 
   const fetchAlumni = async () => {
+    logger.functionEntry('fetchAlumni')
+    const startTime = Date.now()
     try {
       setLoading(true)
+      logger.apiRequest('GET', '/admin/alumni')
       const response = await api.get('/admin/alumni')
-      setAlumni(response.data.data || [])
+      const alumniData = response.data.data || []
+      logger.apiResponse('GET', '/admin/alumni', response.status, { count: alumniData.length }, Date.now() - startTime)
+      setAlumni(alumniData)
+      logger.functionExit('fetchAlumni', { success: true, count: alumniData.length, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error fetching alumni:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch alumni', error, {
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch alumni data')
+      logger.functionExit('fetchAlumni', { success: false, error: error.message, duration: `${duration}ms` })
     } finally {
       setLoading(false)
     }
@@ -68,21 +81,36 @@ const AdminAlumniManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingAlumni: editingAlumni?._id })
+    const startTime = Date.now()
     try {
       if (editingAlumni) {
+        logger.apiRequest('PUT', `/admin/alumni/${editingAlumni._id}`, formData)
         await api.put(`/admin/alumni/${editingAlumni._id}`, formData)
+        logger.apiResponse('PUT', `/admin/alumni/${editingAlumni._id}`, 200, { message: 'Alumni updated' }, Date.now() - startTime)
         toast.success('Alumni profile updated successfully')
       } else {
+        logger.apiRequest('POST', '/admin/alumni', formData)
         await api.post('/admin/alumni', formData)
+        logger.apiResponse('POST', '/admin/alumni', 200, { message: 'Alumni created' }, Date.now() - startTime)
         toast.success('Alumni profile created successfully')
       }
       setShowModal(false)
       setEditingAlumni(null)
       resetForm()
       fetchAlumni()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving alumni:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save alumni', error, {
+        formData,
+        editingAlumni: editingAlumni?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to save alumni profile')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -121,13 +149,25 @@ const AdminAlumniManagement = () => {
 
   const handleDelete = async (alumniId) => {
     if (window.confirm('Are you sure you want to delete this alumni profile?')) {
+      logger.functionEntry('handleDelete', { alumniId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/admin/alumni/${alumniId}`)
         await api.delete(`/admin/alumni/${alumniId}`)
+        logger.apiResponse('DELETE', `/admin/alumni/${alumniId}`, 200, { message: 'Alumni deleted' }, Date.now() - startTime)
         toast.success('Alumni profile deleted successfully')
         fetchAlumni()
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting alumni:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete alumni', error, {
+          alumniId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         toast.error('Failed to delete alumni profile')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

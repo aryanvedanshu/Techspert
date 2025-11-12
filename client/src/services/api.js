@@ -5,9 +5,10 @@ import logger from '../utils/logger'
 
 // Create axios instance with base configuration
 logger.functionEntry('api.js initialization')
-logger.info('Initializing axios instance', { baseURL: 'http://localhost:5000/api' })
+const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+logger.info('Initializing axios instance', { baseURL: apiBaseURL })
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: apiBaseURL,
   timeout: 15000, // Increased timeout for better reliability
   headers: {
     'Content-Type': 'application/json',
@@ -201,8 +202,9 @@ api.interceptors.response.use(
             hasUserData: !!userData
           })
           
+          const refreshBaseURL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
           const response = await axios.post(
-            `http://localhost:5000${refreshEndpoint}`,
+            `${refreshBaseURL}${refreshEndpoint}`,
             { refreshToken }
           )
 

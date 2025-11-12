@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminUserManagement = () => {
   const [users, setUsers] = useState([])
@@ -109,41 +110,71 @@ const AdminUserManagement = () => {
 
   const handleUserSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleUserSubmit', { editingUser: editingUser?._id })
+    const startTime = Date.now()
     try {
       if (editingUser) {
+        logger.apiRequest('PUT', `/admin/users/${editingUser._id}`, userFormData)
         await api.put(`/admin/users/${editingUser._id}`, userFormData)
+        logger.apiResponse('PUT', `/admin/users/${editingUser._id}`, 200, { message: 'User updated' }, Date.now() - startTime)
         toast.success('User updated successfully')
       } else {
+        logger.apiRequest('POST', '/admin/users', userFormData)
         await api.post('/admin/users', userFormData)
+        logger.apiResponse('POST', '/admin/users', 200, { message: 'User created' }, Date.now() - startTime)
         toast.success('User created successfully')
       }
       setShowUserModal(false)
       setEditingUser(null)
       resetUserForm()
       fetchData()
+      logger.functionExit('handleUserSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving user:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save user', error, {
+        userFormData,
+        editingUser: editingUser?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to save user')
+      logger.functionExit('handleUserSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
   const handleEnrollmentSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleEnrollmentSubmit', { editingEnrollment: editingEnrollment?._id })
+    const startTime = Date.now()
     try {
       if (editingEnrollment) {
+        logger.apiRequest('PUT', `/enrollments/${editingEnrollment._id}`, enrollmentFormData)
         await api.put(`/enrollments/${editingEnrollment._id}`, enrollmentFormData)
+        logger.apiResponse('PUT', `/enrollments/${editingEnrollment._id}`, 200, { message: 'Enrollment updated' }, Date.now() - startTime)
         toast.success('Enrollment updated successfully')
       } else {
+        logger.apiRequest('POST', '/enrollments', enrollmentFormData)
         await api.post('/enrollments', enrollmentFormData)
+        logger.apiResponse('POST', '/enrollments', 200, { message: 'Enrollment created' }, Date.now() - startTime)
         toast.success('Enrollment created successfully')
       }
       setShowEnrollmentModal(false)
       setEditingEnrollment(null)
       resetEnrollmentForm()
       fetchData()
+      logger.functionExit('handleEnrollmentSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving enrollment:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save enrollment', error, {
+        enrollmentFormData,
+        editingEnrollment: editingEnrollment?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to save enrollment')
+      logger.functionExit('handleEnrollmentSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -181,38 +212,76 @@ const AdminUserManagement = () => {
 
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
+      logger.functionEntry('handleDeleteUser', { userId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/admin/users/${userId}`)
         await api.delete(`/admin/users/${userId}`)
+        logger.apiResponse('DELETE', `/admin/users/${userId}`, 200, { message: 'User deleted' }, Date.now() - startTime)
         toast.success('User deleted successfully')
         fetchData()
+        logger.functionExit('handleDeleteUser', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting user:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete user', error, {
+          userId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         toast.error('Failed to delete user')
+        logger.functionExit('handleDeleteUser', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }
 
   const handleDeleteEnrollment = async (enrollmentId) => {
     if (window.confirm('Are you sure you want to delete this enrollment?')) {
+      logger.functionEntry('handleDeleteEnrollment', { enrollmentId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/enrollments/${enrollmentId}`)
         await api.delete(`/enrollments/${enrollmentId}`)
+        logger.apiResponse('DELETE', `/enrollments/${enrollmentId}`, 200, { message: 'Enrollment deleted' }, Date.now() - startTime)
         toast.success('Enrollment deleted successfully')
         fetchData()
+        logger.functionExit('handleDeleteEnrollment', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting enrollment:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete enrollment', error, {
+          enrollmentId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         toast.error('Failed to delete enrollment')
+        logger.functionExit('handleDeleteEnrollment', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }
 
   const toggleUserStatus = async (userId, isActive) => {
+    logger.functionEntry('toggleUserStatus', { userId, currentStatus: isActive, newStatus: !isActive })
+    const startTime = Date.now()
     try {
+      logger.apiRequest('PUT', `/admin/users/${userId}`, { isActive: !isActive })
       await api.put(`/admin/users/${userId}`, { isActive: !isActive })
+      logger.apiResponse('PUT', `/admin/users/${userId}`, 200, { message: 'User status updated' }, Date.now() - startTime)
       toast.success(`User ${!isActive ? 'activated' : 'deactivated'} successfully`)
       fetchData()
+      logger.functionExit('toggleUserStatus', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error updating user status:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to update user status', error, {
+        userId,
+        currentStatus: isActive,
+        newStatus: !isActive,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to update user status')
+      logger.functionExit('toggleUserStatus', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 

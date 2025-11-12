@@ -31,14 +31,38 @@ import sessionRoutes from './routes/sessions.js'
 import analyticsRoutes from './routes/analytics.js'
 import userManagementRoutes from './routes/userManagement.js'
 import trainerRoutes from './routes/trainers.js'
+import demoSignupRoutes from './routes/demoSignups.js'
 
 // Load environment variables
 dotenv.config()
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'MONGO_URI',
+  'JWT_SECRET',
+  'PORT'
+]
+
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName])
+
+if (missingEnvVars.length > 0) {
+  logger.error('Missing required environment variables', new Error('Environment validation failed'), {
+    missing: missingEnvVars,
+    required: requiredEnvVars
+  })
+  logger.error('❌ Missing required environment variables', {
+    missing: missingEnvVars.join(', '),
+    message: 'Please check your .env file and ensure all required variables are set.'
+  })
+  process.exit(1)
+}
+
 logger.functionEntry('server initialization')
 logger.info('Loading environment variables and initializing server', {
   nodeEnv: process.env.NODE_ENV,
-  port: process.env.PORT
+  port: process.env.PORT,
+  mongoUri: process.env.MONGO_URI ? 'configured' : 'missing',
+  jwtSecret: process.env.JWT_SECRET ? 'configured' : 'missing'
 })
 
 const app = express()
@@ -49,12 +73,14 @@ logger.info('Server configuration', {
   nodeEnv: process.env.NODE_ENV
 })
 
-// Connect to MongoDB
-logger.functionEntry('connectDB')
-logger.info('Connecting to MongoDB database', {
-  mongoUri: process.env.MONGO_URI ? 'configured' : 'missing'
-})
-connectDB()
+// Connect to MongoDB (skip in test environment - tests will handle connection)
+if (process.env.NODE_ENV !== 'test') {
+  logger.functionEntry('connectDB')
+  logger.info('Connecting to MongoDB database', {
+    mongoUri: process.env.MONGO_URI ? 'configured' : 'missing'
+  })
+  connectDB()
+}
 
 // No-cache middleware - MUST be applied before other middleware to prevent caching
 logger.functionEntry('noCache middleware setup')
@@ -208,6 +234,7 @@ app.use('/api/sessions', sessionRoutes)
 app.use('/api/admin/analytics', analyticsRoutes)
 app.use('/api/admin/users', userManagementRoutes)
 app.use('/api/trainers', trainerRoutes)
+app.use('/api/demo-signups', demoSignupRoutes)
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -260,28 +287,29 @@ logger.functionEntry('error handling middleware setup')
 logger.info('Setting up error handling middleware')
 app.use(errorHandler)
 
-// Start server
-logger.functionEntry('server start')
-logger.info('Starting server', { port: PORT })
-app.listen(PORT, () => {
-  logger.info('🚀 Server running successfully', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    apiUrl: `http://localhost:${PORT}/api`,
-    healthCheck: `http://localhost:${PORT}/health`
+// Start server (only if not in test environment)
+if (process.env.NODE_ENV !== 'test') {
+  logger.functionEntry('server start')
+  logger.info('Starting server', { port: PORT })
+  app.listen(PORT, () => {
+    logger.info('🚀 Server running successfully', {
+      port: PORT,
+      environment: process.env.NODE_ENV || 'development',
+      apiUrl: `http://localhost:${PORT}/api`,
+      healthCheck: `http://localhost:${PORT}/health`,
+      message: `🚀 Server running on port ${PORT}`,
+      envMessage: `📚 Environment: ${process.env.NODE_ENV || 'development'}`,
+      apiMessage: `🔗 API URL: http://localhost:${PORT}/api`,
+      healthMessage: `❤️  Health check: http://localhost:${PORT}/health`
+    })
+    logger.functionExit('server start', { success: true, port: PORT })
   })
-  console.log(`🚀 Server running on port ${PORT}`)
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`🔗 API URL: http://localhost:${PORT}/api`)
-  console.log(`❤️  Health check: http://localhost:${PORT}/health`)
-  logger.functionExit('server start', { success: true, port: PORT })
-})
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.functionEntry('SIGTERM handler')
   logger.info('SIGTERM received, shutting down gracefully')
-  console.log('SIGTERM received, shutting down gracefully')
   logger.functionExit('SIGTERM handler')
   process.exit(0)
 })
@@ -289,7 +317,6 @@ process.on('SIGTERM', () => {
 process.on('SIGINT', () => {
   logger.functionEntry('SIGINT handler')
   logger.info('SIGINT received, shutting down gracefully')
-  console.log('SIGINT received, shutting down gracefully')
   logger.functionExit('SIGINT handler')
   process.exit(0)
 })

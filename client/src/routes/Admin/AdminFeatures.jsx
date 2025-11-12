@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminFeatures = () => {
   const { isAuthenticated } = useAuth()
@@ -50,11 +51,23 @@ const AdminFeatures = () => {
 
   useEffect(() => {
     const fetchFeatures = async () => {
+      logger.functionEntry('fetchFeatures')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/features')
         const response = await api.get('/features')
-        setFeatures(response.data.data || [])
+        const featuresData = response.data.data || []
+        logger.apiResponse('GET', '/features', response.status, { count: featuresData.length }, Date.now() - startTime)
+        setFeatures(featuresData)
+        logger.functionExit('fetchFeatures', { success: true, count: featuresData.length, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching features:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch features', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
+        logger.functionExit('fetchFeatures', { success: false, error: error.message, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -67,22 +80,37 @@ const AdminFeatures = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingFeature: editingFeature?._id })
+    const startTime = Date.now()
     try {
       if (editingFeature) {
+        logger.apiRequest('PUT', `/features/${editingFeature._id}`, formData)
         await api.put(`/features/${editingFeature._id}`, formData)
+        logger.apiResponse('PUT', `/features/${editingFeature._id}`, 200, { message: 'Feature updated' }, Date.now() - startTime)
         setFeatures(features.map(feature => 
           feature._id === editingFeature._id ? { ...feature, ...formData } : feature
         ))
       } else {
+        logger.apiRequest('POST', '/features', formData)
         const response = await api.post('/features', formData)
+        logger.apiResponse('POST', '/features', 200, { message: 'Feature created' }, Date.now() - startTime)
         setFeatures([...features, response.data.data])
       }
       setShowModal(false)
       setEditingFeature(null)
       resetForm()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving feature:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save feature', error, {
+        formData,
+        editingFeature: editingFeature?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving feature')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -103,12 +131,24 @@ const AdminFeatures = () => {
 
   const handleDelete = async (featureId) => {
     if (window.confirm('Are you sure you want to delete this feature?')) {
+      logger.functionEntry('handleDelete', { featureId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/features/${featureId}`)
         await api.delete(`/features/${featureId}`)
+        logger.apiResponse('DELETE', `/features/${featureId}`, 200, { message: 'Feature deleted' }, Date.now() - startTime)
         setFeatures(features.filter(feature => feature._id !== featureId))
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting feature:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete feature', error, {
+          featureId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         alert('Failed to delete feature')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

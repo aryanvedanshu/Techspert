@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminContactInfo = () => {
   const { isAuthenticated } = useAuth()
@@ -48,11 +49,23 @@ const AdminContactInfo = () => {
 
   useEffect(() => {
     const fetchContactInfo = async () => {
+      logger.functionEntry('fetchContactInfo')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/contact-info')
         const response = await api.get('/contact-info')
-        setContactInfo(response.data.data || [])
+        const contactData = response.data.data || []
+        logger.apiResponse('GET', '/contact-info', response.status, { count: contactData.length }, Date.now() - startTime)
+        setContactInfo(contactData)
+        logger.functionExit('fetchContactInfo', { success: true, count: contactData.length, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching contact info:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch contact info', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
+        logger.functionExit('fetchContactInfo', { success: false, error: error.message, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -65,22 +78,37 @@ const AdminContactInfo = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingContact: editingContact?._id })
+    const startTime = Date.now()
     try {
       if (editingContact) {
+        logger.apiRequest('PUT', `/contact-info/${editingContact._id}`, formData)
         await api.put(`/contact-info/${editingContact._id}`, formData)
+        logger.apiResponse('PUT', `/contact-info/${editingContact._id}`, 200, { message: 'Contact info updated' }, Date.now() - startTime)
         setContactInfo(contactInfo.map(contact => 
           contact._id === editingContact._id ? { ...contact, ...formData } : contact
         ))
       } else {
+        logger.apiRequest('POST', '/contact-info', formData)
         const response = await api.post('/contact-info', formData)
+        logger.apiResponse('POST', '/contact-info', 200, { message: 'Contact info created' }, Date.now() - startTime)
         setContactInfo([...contactInfo, response.data.data])
       }
       setShowModal(false)
       setEditingContact(null)
       resetForm()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving contact info:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save contact info', error, {
+        formData,
+        editingContact: editingContact?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving contact info')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -102,12 +130,24 @@ const AdminContactInfo = () => {
 
   const handleDelete = async (contactId) => {
     if (window.confirm('Are you sure you want to delete this contact info?')) {
+      logger.functionEntry('handleDelete', { contactId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/contact-info/${contactId}`)
         await api.delete(`/contact-info/${contactId}`)
+        logger.apiResponse('DELETE', `/contact-info/${contactId}`, 200, { message: 'Contact info deleted' }, Date.now() - startTime)
         setContactInfo(contactInfo.filter(contact => contact._id !== contactId))
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting contact info:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete contact info', error, {
+          contactId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         alert('Failed to delete contact info')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

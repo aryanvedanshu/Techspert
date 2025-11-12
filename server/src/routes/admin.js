@@ -201,6 +201,15 @@ router.get('/enrollments', (req, res, next) => {
   next()
 }, getAllEnrollmentsForAdmin)
 
+// Demo signups management (Admin only)
+router.get('/demo-signups', (req, res, next) => {
+  logger.debug('Route hit: GET /admin/demo-signups (protected)', { query: req.query })
+  next()
+}, async (req, res, next) => {
+  const { getAllDemoSignups } = await import('../controllers/demoSignupController.js')
+  return getAllDemoSignups(req, res, next)
+})
+
 // Alumni management (Admin only)
 router.get('/alumni', (req, res, next) => {
   logger.debug('Route hit: GET /admin/alumni (protected)', { query: req.query })

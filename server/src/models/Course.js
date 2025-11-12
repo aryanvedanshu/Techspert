@@ -144,6 +144,30 @@ const courseSchema = new mongoose.Schema({
     logoUrl: String,
     signatureUrl: String,
   },
+  // Sale scheduling fields
+  salePrice: {
+    type: Number,
+    min: [0, 'Sale price cannot be negative'],
+  },
+  saleStart: {
+    type: Date,
+  },
+  saleEnd: {
+    type: Date,
+  },
+  timezone: {
+    type: String,
+    default: 'UTC',
+  },
+  showOnPage: {
+    type: Boolean,
+    default: false,
+  },
+  // Trainer reference (optional - can link to Trainer model)
+  trainer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Trainer',
+  },
 }, {
   timestamps: true,
 })
@@ -154,6 +178,8 @@ courseSchema.index({ level: 1 })
 courseSchema.index({ tags: 1 })
 courseSchema.index({ 'rating.average': -1 })
 courseSchema.index({ studentsCount: -1 })
+courseSchema.index({ trainer: 1 })
+courseSchema.index({ saleStart: 1, saleEnd: 1 })
 
 // Virtual for discount percentage
 courseSchema.virtual('discountPercentage').get(function() {

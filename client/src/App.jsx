@@ -29,6 +29,7 @@ import AdminUserManagement from './routes/Admin/AdminUserManagement'
 import AdminContentManagement from './routes/Admin/AdminContentManagement'
 import AdminTrainerManagement from './routes/Admin/AdminTrainerManagement'
 import AdminAdminManagement from './routes/Admin/AdminAdminManagement'
+import AdminMessagingCenter from './routes/Admin/AdminMessagingCenter'
 
 function App() {
   const location = useLocation()
@@ -69,6 +70,7 @@ function App() {
               <Route path="/admin/content" element={<AdminContentManagement />} />
               <Route path="/admin/trainers" element={<AdminTrainerManagement />} />
               <Route path="/admin/admins" element={<AdminAdminManagement />} />
+              <Route path="/admin/messaging" element={<AdminMessagingCenter />} />
             </Routes>
           </main>
           <Footer />

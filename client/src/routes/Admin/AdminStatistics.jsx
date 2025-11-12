@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminStatistics = () => {
   const { isAuthenticated } = useAuth()
@@ -50,11 +51,23 @@ const AdminStatistics = () => {
 
   useEffect(() => {
     const fetchStatistics = async () => {
+      logger.functionEntry('fetchStatistics')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/statistics')
         const response = await api.get('/statistics')
-        setStatistics(response.data.data || [])
+        const statsData = response.data.data || []
+        logger.apiResponse('GET', '/statistics', response.status, { count: statsData.length }, Date.now() - startTime)
+        setStatistics(statsData)
+        logger.functionExit('fetchStatistics', { success: true, count: statsData.length, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching statistics:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch statistics', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
+        logger.functionExit('fetchStatistics', { success: false, error: error.message, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -67,22 +80,37 @@ const AdminStatistics = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingStatistic: editingStatistic?._id })
+    const startTime = Date.now()
     try {
       if (editingStatistic) {
+        logger.apiRequest('PUT', `/statistics/${editingStatistic._id}`, formData)
         await api.put(`/statistics/${editingStatistic._id}`, formData)
+        logger.apiResponse('PUT', `/statistics/${editingStatistic._id}`, 200, { message: 'Statistic updated' }, Date.now() - startTime)
         setStatistics(statistics.map(statistic => 
           statistic._id === editingStatistic._id ? { ...statistic, ...formData } : statistic
         ))
       } else {
+        logger.apiRequest('POST', '/statistics', formData)
         const response = await api.post('/statistics', formData)
+        logger.apiResponse('POST', '/statistics', 200, { message: 'Statistic created' }, Date.now() - startTime)
         setStatistics([...statistics, response.data.data])
       }
       setShowModal(false)
       setEditingStatistic(null)
       resetForm()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving statistic:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save statistic', error, {
+        formData,
+        editingStatistic: editingStatistic?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving statistic')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -103,12 +131,24 @@ const AdminStatistics = () => {
 
   const handleDelete = async (statisticId) => {
     if (window.confirm('Are you sure you want to delete this statistic?')) {
+      logger.functionEntry('handleDelete', { statisticId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/statistics/${statisticId}`)
         await api.delete(`/statistics/${statisticId}`)
+        logger.apiResponse('DELETE', `/statistics/${statisticId}`, 200, { message: 'Statistic deleted' }, Date.now() - startTime)
         setStatistics(statistics.filter(statistic => statistic._id !== statisticId))
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting statistic:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete statistic', error, {
+          statisticId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         alert('Failed to delete statistic')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

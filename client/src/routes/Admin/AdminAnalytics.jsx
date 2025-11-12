@@ -10,6 +10,7 @@ import { api } from '../../services/api'
 import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
+import logger from '../../utils/logger'
 
 const AdminAnalytics = () => {
   const [analytics, setAnalytics] = useState({
@@ -36,6 +37,8 @@ const AdminAnalytics = () => {
   }, [dateRange])
 
   const fetchAnalytics = async () => {
+    logger.functionEntry('fetchAnalytics')
+    const startTime = Date.now()
     try {
       setLoading(true)
       const [overviewRes, coursesRes, enrollmentsRes, paymentsRes, projectsRes] = await Promise.all([
@@ -129,9 +132,16 @@ const AdminAnalytics = () => {
           }
         ]
       })
+      logger.functionExit('fetchAnalytics', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error fetching analytics:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to fetch analytics', error, {
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch analytics data')
+      logger.functionExit('fetchAnalytics', { success: false, error: error.message, duration: `${duration}ms` })
     } finally {
       setLoading(false)
       setRefreshing(false)

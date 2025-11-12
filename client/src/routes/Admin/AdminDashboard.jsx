@@ -5,10 +5,12 @@ import {
   Users, BookOpen, Code, Award, TrendingUp, Eye, Plus, Settings, 
   Palette, Mail, Globe, Shield, BarChart3, Clock, DollarSign, 
   Star, Activity, AlertCircle, CheckCircle, XCircle, RefreshCw,
-  UserCheck, HelpCircle, Phone, Target, Brain, Database
+  UserCheck, HelpCircle, Phone, Target, Brain, Database, GraduationCap,
+  MessageSquare
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
+import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
@@ -144,6 +146,9 @@ const AdminDashboard = () => {
         error: error.message,
         duration: `${duration}ms`
       })
+      
+      // Set error state for UI display
+      toast.error('Failed to load dashboard data. Please refresh the page.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -341,6 +346,13 @@ const AdminDashboard = () => {
       color: 'bg-green-500',
     },
     {
+      title: 'Trainer Management',
+      description: 'Manage trainers and course instructors',
+      icon: GraduationCap,
+      link: '/admin/trainers',
+      color: 'bg-cyan-500',
+    },
+    {
       title: 'Features',
       description: 'Manage website features and highlights',
       icon: Target,
@@ -388,6 +400,13 @@ const AdminDashboard = () => {
       icon: Shield,
       link: '/admin/admins',
       color: 'bg-red-500',
+    },
+    {
+      title: 'Messaging Center',
+      description: 'Manage demo signups and send broadcasts',
+      icon: MessageSquare,
+      link: '/admin/messaging',
+      color: 'bg-indigo-500',
     },
   ]
 
@@ -468,7 +487,7 @@ const AdminDashboard = () => {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Quick Actions */}
           <div className="lg:col-span-2">
             <motion.div
@@ -510,49 +529,8 @@ const AdminDashboard = () => {
             </motion.div>
           </div>
 
-          {/* Content Management */}
-          <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Card>
-                <h2 className="text-xl font-heading font-semibold text-neutral-900 mb-6">
-                  Content Management
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {contentManagementCards.map((card, index) => {
-                    const Icon = card.icon
-                    return (
-                      <Link
-                        key={card.title}
-                        to={card.link}
-                        className="block p-4 border border-neutral-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 ${card.color} rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
-                            <Icon size={20} className="text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors duration-200">
-                              {card.title}
-                            </h3>
-                            <p className="text-sm text-neutral-600">
-                              {card.description}
-                            </p>
-                          </div>
-                        </div>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </Card>
-            </motion.div>
-          </div>
-
           {/* Recent Activity */}
-          <div>
+          <div className="lg:col-span-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -563,48 +541,93 @@ const AdminDashboard = () => {
                   Recent Activity
                 </h2>
                 <div className="space-y-4">
-                  {recentActivity.map((activity, index) => {
-                    const getStatusIcon = (status) => {
-                      switch (status) {
-                        case 'success':
-                          return <CheckCircle size={16} className="text-green-500" />
-                        case 'pending':
-                          return <Clock size={16} className="text-yellow-500" />
-                        case 'error':
-                          return <XCircle size={16} className="text-red-500" />
-                        default:
-                          return <Activity size={16} className="text-blue-500" />
+                  {recentActivity.length === 0 ? (
+                    <p className="text-sm text-neutral-500 text-center py-4">No recent activity</p>
+                  ) : (
+                    recentActivity.map((activity, index) => {
+                      const getStatusIcon = (status) => {
+                        switch (status) {
+                          case 'success':
+                            return <CheckCircle size={16} className="text-green-500" />
+                          case 'pending':
+                            return <Clock size={16} className="text-yellow-500" />
+                          case 'error':
+                            return <XCircle size={16} className="text-red-500" />
+                          default:
+                            return <Activity size={16} className="text-blue-500" />
+                        }
                       }
-                    }
-                    
-                    const getStatusColor = (status) => {
-                      switch (status) {
-                        case 'success':
-                          return 'bg-green-500'
-                        case 'pending':
-                          return 'bg-yellow-500'
-                        case 'error':
-                          return 'bg-red-500'
-                        default:
-                          return 'bg-blue-500'
+                      
+                      const getStatusColor = (status) => {
+                        switch (status) {
+                          case 'success':
+                            return 'bg-green-500'
+                          case 'pending':
+                            return 'bg-yellow-500'
+                          case 'error':
+                            return 'bg-red-500'
+                          default:
+                            return 'bg-blue-500'
+                        }
                       }
-                    }
 
-                    return (
-                      <div key={activity.id} className="flex items-start gap-3">
-                        <div className={`w-2 h-2 ${getStatusColor(activity.status)} rounded-full mt-2`}></div>
-                        <div className="flex-1">
-                          <p className="text-sm text-neutral-900">{activity.title}</p>
-                          <p className="text-xs text-neutral-500">{activity.time}</p>
+                      return (
+                        <div key={activity.id} className="flex items-start gap-3">
+                          <div className={`w-2 h-2 ${getStatusColor(activity.status)} rounded-full mt-2`}></div>
+                          <div className="flex-1">
+                            <p className="text-sm text-neutral-900">{activity.title}</p>
+                            <p className="text-xs text-neutral-500">{activity.time}</p>
+                          </div>
+                          {getStatusIcon(activity.status)}
                         </div>
-                        {getStatusIcon(activity.status)}
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  )}
                 </div>
               </Card>
             </motion.div>
           </div>
+        </div>
+
+        {/* Content Management - Full Width */}
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <Card>
+              <h2 className="text-xl font-heading font-semibold text-neutral-900 mb-6">
+                Content Management
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {contentManagementCards.map((card, index) => {
+                  const Icon = card.icon
+                  return (
+                    <Link
+                      key={card.title}
+                      to={card.link}
+                      className="block p-4 border border-neutral-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 ${card.color} rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                          <Icon size={20} className="text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors duration-200">
+                            {card.title}
+                          </h3>
+                          <p className="text-sm text-neutral-600">
+                            {card.description}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </div>
 
@@ -612,14 +635,14 @@ const AdminDashboard = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title={`Create New ${createType.charAt(0).toUpperCase() + createType.slice(1)}`}
+        title={createType ? `Create New ${createType.charAt(0).toUpperCase() + createType.slice(1)}` : 'Create New'}
       >
         <div className="p-6">
           {createType === 'course' && (
             <div className="space-y-4">
               <p className="text-neutral-600">Create a new course with comprehensive content and materials.</p>
               <div className="flex gap-4">
-                <Button onClick={() => window.location.href = '/admin/courses'}>
+                <Button onClick={() => { window.location.href = '/admin/courses' }}>
                   Go to Course Management
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateModal(false)}>
@@ -633,7 +656,7 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               <p className="text-neutral-600">Add a new student project to showcase their work.</p>
               <div className="flex gap-4">
-                <Button onClick={() => window.location.href = '/admin/projects'}>
+                <Button onClick={() => { window.location.href = '/admin/projects' }}>
                   Go to Project Management
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateModal(false)}>
@@ -647,7 +670,7 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               <p className="text-neutral-600">Create a new alumni success story profile.</p>
               <div className="flex gap-4">
-                <Button onClick={() => window.location.href = '/admin/alumni'}>
+                <Button onClick={() => { window.location.href = '/admin/alumni' }}>
                   Go to Alumni Management
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateModal(false)}>

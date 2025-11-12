@@ -1,4 +1,5 @@
 import { asyncHandler } from '../middleware/errorHandler.js'
+import logger from '../utils/logger.js'
 import Course from '../models/Course.js'
 import Project from '../models/Project.js'
 import Alumni from '../models/Alumni.js'
@@ -10,7 +11,11 @@ import Payment from '../models/Payment.js'
 // @route   GET /api/admin/analytics/overview
 // @access  Private/Admin
 export const getAnalyticsOverview = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getAnalyticsOverview:8] Fetching analytics overview")
+  const startTime = Date.now()
+  logger.functionEntry('getAnalyticsOverview', {
+    adminId: req.admin?._id,
+    adminEmail: req.admin?.email
+  })
 
   try {
     // Get counts from all models
@@ -63,18 +68,32 @@ export const getAnalyticsOverview = asyncHandler(async (req, res) => {
       completionRate: Math.round(completionRate * 10) / 10
     }
 
-    console.log("[DEBUG: analyticsController.js:getAnalyticsOverview:success] Analytics overview calculated:", overview)
+    const duration = Date.now() - startTime
+    logger.success('Analytics overview calculated successfully', {
+      overview,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getAnalyticsOverview', {
+      success: true,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: overview
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getAnalyticsOverview:error] Error fetching analytics:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch analytics data'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch analytics overview', error, {
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getAnalyticsOverview', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -82,7 +101,10 @@ export const getAnalyticsOverview = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/analytics/courses
 // @access  Private/Admin
 export const getCourseAnalytics = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getCourseAnalytics:8] Fetching course analytics")
+  const startTime = Date.now()
+  logger.functionEntry('getCourseAnalytics', {
+    adminId: req.admin?._id
+  })
 
   try {
     const courses = await Course.find({ isPublished: true })
@@ -101,18 +123,33 @@ export const getCourseAnalytics = asyncHandler(async (req, res) => {
       createdAt: course.createdAt
     }))
 
-    console.log("[DEBUG: analyticsController.js:getCourseAnalytics:success] Course analytics fetched:", courseAnalytics.length, "courses")
+    const duration = Date.now() - startTime
+    logger.success('Course analytics fetched successfully', {
+      count: courseAnalytics.length,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getCourseAnalytics', {
+      success: true,
+      count: courseAnalytics.length,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: courseAnalytics
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getCourseAnalytics:error] Error fetching course analytics:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch course analytics'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch course analytics', error, {
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getCourseAnalytics', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -120,7 +157,11 @@ export const getCourseAnalytics = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/analytics/users
 // @access  Private/Admin
 export const getUserAnalytics = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getUserAnalytics:8] Fetching user analytics")
+  const startTime = Date.now()
+  logger.functionEntry('getUserAnalytics', {
+    period: req.query.period,
+    adminId: req.admin?._id
+  })
 
   try {
     const { period = '30d' } = req.query
@@ -170,18 +211,33 @@ export const getUserAnalytics = asyncHandler(async (req, res) => {
       }, {})
     }
 
-    console.log("[DEBUG: analyticsController.js:getUserAnalytics:success] User analytics fetched")
+    const duration = Date.now() - startTime
+    logger.success('User analytics fetched successfully', {
+      period: req.query.period,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getUserAnalytics', {
+      success: true,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: userAnalytics
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getUserAnalytics:error] Error fetching user analytics:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch user analytics'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch user analytics', error, {
+      period: req.query.period,
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getUserAnalytics', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -189,7 +245,11 @@ export const getUserAnalytics = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/analytics/revenue
 // @access  Private/Admin
 export const getRevenueAnalytics = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getRevenueAnalytics:8] Fetching revenue analytics")
+  const startTime = Date.now()
+  logger.functionEntry('getRevenueAnalytics', {
+    period: req.query.period,
+    adminId: req.admin?._id
+  })
 
   try {
     const { period = '30d' } = req.query
@@ -250,18 +310,33 @@ export const getRevenueAnalytics = asyncHandler(async (req, res) => {
       revenueByCourse
     }
 
-    console.log("[DEBUG: analyticsController.js:getRevenueAnalytics:success] Revenue analytics fetched")
+    const duration = Date.now() - startTime
+    logger.success('Revenue analytics fetched successfully', {
+      period: req.query.period,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getRevenueAnalytics', {
+      success: true,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: revenueAnalytics
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getRevenueAnalytics:error] Error fetching revenue analytics:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch revenue analytics'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch revenue analytics', error, {
+      period: req.query.period,
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getRevenueAnalytics', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -269,7 +344,10 @@ export const getRevenueAnalytics = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/analytics/projects
 // @access  Private/Admin
 export const getProjectAnalytics = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getProjectAnalytics:8] Fetching project analytics")
+  const startTime = Date.now()
+  logger.functionEntry('getProjectAnalytics', {
+    adminId: req.admin?._id
+  })
 
   try {
     const [
@@ -309,18 +387,31 @@ export const getProjectAnalytics = asyncHandler(async (req, res) => {
       averageRating: averageRating.length > 0 ? averageRating[0].avgRating : 0
     }
 
-    console.log("[DEBUG: analyticsController.js:getProjectAnalytics:success] Project analytics fetched")
+    const duration = Date.now() - startTime
+    logger.success('Project analytics fetched successfully', {
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getProjectAnalytics', {
+      success: true,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: projectAnalytics
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getProjectAnalytics:error] Error fetching project analytics:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch project analytics'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch project analytics', error, {
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getProjectAnalytics', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })
 
@@ -328,7 +419,11 @@ export const getProjectAnalytics = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/analytics/activity
 // @access  Private/Admin
 export const getRecentActivity = asyncHandler(async (req, res) => {
-  console.log("[DEBUG: analyticsController.js:getRecentActivity:8] Fetching recent activity")
+  const startTime = Date.now()
+  logger.functionEntry('getRecentActivity', {
+    limit: req.query.limit,
+    adminId: req.admin?._id
+  })
 
   try {
     const { limit = 20 } = req.query
@@ -365,17 +460,33 @@ export const getRecentActivity = asyncHandler(async (req, res) => {
       }))
     ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, parseInt(limit))
 
-    console.log("[DEBUG: analyticsController.js:getRecentActivity:success] Recent activity fetched:", activities.length, "activities")
+    const duration = Date.now() - startTime
+    logger.success('Recent activity fetched successfully', {
+      count: activities.length,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getRecentActivity', {
+      success: true,
+      count: activities.length,
+      duration: `${duration}ms`
+    })
 
     res.json({
       success: true,
       data: activities
     })
   } catch (error) {
-    console.error("[DEBUG: analyticsController.js:getRecentActivity:error] Error fetching recent activity:", error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch recent activity'
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch recent activity', error, {
+      limit: req.query.limit,
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
     })
+    logger.functionExit('getRecentActivity', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
   }
 })

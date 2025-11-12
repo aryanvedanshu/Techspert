@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Clock, Users, ExternalLink, CheckCircle, Mail, Phone, User } from 'lucide-react'
 import { toast } from 'sonner'
+import { api } from '../services/api'
 import Button from './UI/Button'
 import Card from './UI/Card'
+import logger from '../utils/logger'
 
 const FreeDemoModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -18,11 +20,19 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
+    logger.functionEntry('handleSubmit', { hasName: !!formData.name, hasEmail: !!formData.email })
+    const startTime = Date.now()
 
     try {
-      // Here you would typically send the data to your backend
-      // For now, we'll just simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      logger.apiRequest('POST', '/demo-signups', formData)
+      const response = await api.post('/demo-signups', formData)
+      logger.apiResponse('POST', '/demo-signups', response.status, { signupId: response.data.data?._id }, Date.now() - startTime)
+      
+      logger.success('Demo registration successful', {
+        signupId: response.data.data?._id,
+        duration: `${Date.now() - startTime}ms`
+      })
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
       
       toast.success('Demo registration successful! Check your email for the Google Meet link.')
       onClose()
@@ -36,7 +46,15 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
         experience: 'beginner'
       })
     } catch (error) {
-      toast.error('Failed to register for demo. Please try again.')
+      const duration = Date.now() - startTime
+      logger.error('Failed to register for demo', error, {
+        formData,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
+      toast.error(error.response?.data?.message || 'Failed to register for demo. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

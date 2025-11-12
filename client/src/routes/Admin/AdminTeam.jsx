@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminTeam = () => {
   const { isAuthenticated } = useAuth()
@@ -35,11 +36,23 @@ const AdminTeam = () => {
 
   useEffect(() => {
     const fetchTeam = async () => {
+      logger.functionEntry('fetchTeam')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/team')
         const response = await api.get('/team')
-        setTeam(response.data.data || [])
+        const teamData = response.data.data || []
+        logger.apiResponse('GET', '/team', response.status, { count: teamData.length }, Date.now() - startTime)
+        setTeam(teamData)
+        logger.functionExit('fetchTeam', { success: true, count: teamData.length, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching team:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch team', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
+        logger.functionExit('fetchTeam', { success: false, error: error.message, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -52,22 +65,37 @@ const AdminTeam = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingMember: editingMember?._id })
+    const startTime = Date.now()
     try {
       if (editingMember) {
+        logger.apiRequest('PUT', `/team/${editingMember._id}`, formData)
         await api.put(`/team/${editingMember._id}`, formData)
+        logger.apiResponse('PUT', `/team/${editingMember._id}`, 200, { message: 'Team member updated' }, Date.now() - startTime)
         setTeam(team.map(member => 
           member._id === editingMember._id ? { ...member, ...formData } : member
         ))
       } else {
+        logger.apiRequest('POST', '/team', formData)
         const response = await api.post('/team', formData)
+        logger.apiResponse('POST', '/team', 200, { message: 'Team member created' }, Date.now() - startTime)
         setTeam([...team, response.data.data])
       }
       setShowModal(false)
       setEditingMember(null)
       resetForm()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving team member:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save team member', error, {
+        formData,
+        editingMember: editingMember?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving team member')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -96,12 +124,24 @@ const AdminTeam = () => {
 
   const handleDelete = async (memberId) => {
     if (window.confirm('Are you sure you want to delete this team member?')) {
+      logger.functionEntry('handleDelete', { memberId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/team/${memberId}`)
         await api.delete(`/team/${memberId}`)
+        logger.apiResponse('DELETE', `/team/${memberId}`, 200, { message: 'Team member deleted' }, Date.now() - startTime)
         setTeam(team.filter(member => member._id !== memberId))
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting team member:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete team member', error, {
+          memberId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         alert('Failed to delete team member')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

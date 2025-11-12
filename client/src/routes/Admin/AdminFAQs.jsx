@@ -7,6 +7,7 @@ import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminFAQs = () => {
   const { isAuthenticated } = useAuth()
@@ -33,11 +34,23 @@ const AdminFAQs = () => {
 
   useEffect(() => {
     const fetchFAQs = async () => {
+      logger.functionEntry('fetchFAQs')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/faqs')
         const response = await api.get('/faqs')
-        setFaqs(response.data.data || [])
+        const faqsData = response.data.data || []
+        logger.apiResponse('GET', '/faqs', response.status, { count: faqsData.length }, Date.now() - startTime)
+        setFaqs(faqsData)
+        logger.functionExit('fetchFAQs', { success: true, count: faqsData.length, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching FAQs:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch FAQs', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
+        logger.functionExit('fetchFAQs', { success: false, error: error.message, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -50,22 +63,37 @@ const AdminFAQs = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    logger.functionEntry('handleSubmit', { editingFaq: editingFaq?._id })
+    const startTime = Date.now()
     try {
       if (editingFaq) {
+        logger.apiRequest('PUT', `/faqs/${editingFaq._id}`, formData)
         await api.put(`/faqs/${editingFaq._id}`, formData)
+        logger.apiResponse('PUT', `/faqs/${editingFaq._id}`, 200, { message: 'FAQ updated' }, Date.now() - startTime)
         setFaqs(faqs.map(faq => 
           faq._id === editingFaq._id ? { ...faq, ...formData } : faq
         ))
       } else {
+        logger.apiRequest('POST', '/faqs', formData)
         const response = await api.post('/faqs', formData)
+        logger.apiResponse('POST', '/faqs', 200, { message: 'FAQ created' }, Date.now() - startTime)
         setFaqs([...faqs, response.data.data])
       }
       setShowModal(false)
       setEditingFaq(null)
       resetForm()
+      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving FAQ:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save FAQ', error, {
+        formData,
+        editingFaq: editingFaq?._id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving FAQ')
+      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -84,12 +112,24 @@ const AdminFAQs = () => {
 
   const handleDelete = async (faqId) => {
     if (window.confirm('Are you sure you want to delete this FAQ?')) {
+      logger.functionEntry('handleDelete', { faqId })
+      const startTime = Date.now()
       try {
+        logger.apiRequest('DELETE', `/faqs/${faqId}`)
         await api.delete(`/faqs/${faqId}`)
+        logger.apiResponse('DELETE', `/faqs/${faqId}`, 200, { message: 'FAQ deleted' }, Date.now() - startTime)
         setFaqs(faqs.filter(faq => faq._id !== faqId))
+        logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error deleting FAQ:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to delete FAQ', error, {
+          faqId,
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         alert('Failed to delete FAQ')
+        logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
       }
     }
   }

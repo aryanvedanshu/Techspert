@@ -149,10 +149,18 @@ const AdminCourseManagement = () => {
         count: formData.totalRatings || 0
       },
       studentsCount: formData.studentsEnrolled || 0,
-      // Convert instructor string to object with name
+      // Convert instructor string to object with name (for backward compatibility)
       instructor: typeof formData.instructor === 'string' 
         ? { name: formData.instructor || 'Instructor' }
         : (formData.instructor || { name: 'Instructor' }),
+      // Include trainer reference if selected
+      ...(formData.trainer && { trainer: formData.trainer }),
+      // Include sale scheduling fields if provided
+      ...(formData.salePrice && { salePrice: parseFloat(formData.salePrice) }),
+      ...(formData.saleStart && { saleStart: new Date(formData.saleStart) }),
+      ...(formData.saleEnd && { saleEnd: new Date(formData.saleEnd) }),
+      ...(formData.timezone && { timezone: formData.timezone }),
+      showOnPage: formData.showOnPage || false,
       // Ensure required arrays exist with at least one item (each item is required)
       whatYouWillLearn: (formData.whatYouWillLearn && formData.whatYouWillLearn.length > 0) 
         ? formData.whatYouWillLearn 
@@ -206,9 +214,7 @@ const AdminCourseManagement = () => {
         errorResponse: error.response?.data,
         errorDetails
       })
-      console.error('Error saving course:', error)
-      console.error('Error details:', errorDetails)
-      console.error('Submitted data:', submitData)
+      // Error already logged above with logger.error
       
       // Show detailed error message
       if (errorDetails && typeof errorDetails === 'object') {
@@ -255,6 +261,7 @@ const AdminCourseManagement = () => {
         duration: course.duration || '',
         level: course.level || 'beginner',
         instructor: typeof course.instructor === 'object' ? course.instructor.name || '' : (course.instructor || ''),
+        trainer: course.trainer?._id || course.trainer || '', // Trainer ID
         language: course.language || 'English',
         rating: course.rating?.average || 0,
         totalRatings: course.rating?.count || course.totalRatings || 0,
@@ -265,7 +272,13 @@ const AdminCourseManagement = () => {
         syllabus: course.syllabus || [],
         modules: course.modules || [],
         tags: course.tags || [],
-        position: course.position || 0
+        position: course.position || 0,
+        // Sale scheduling fields
+        salePrice: course.salePrice || '',
+        saleStart: course.saleStart ? new Date(course.saleStart).toISOString().slice(0, 16) : '',
+        saleEnd: course.saleEnd ? new Date(course.saleEnd).toISOString().slice(0, 16) : '',
+        timezone: course.timezone || 'UTC',
+        showOnPage: course.showOnPage || false
       })
       logger.stateChange('AdminCourseManagement', 'showModal', false, true)
       setShowModal(true)
@@ -296,13 +309,25 @@ const AdminCourseManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this course?')) return
     
+    logger.functionEntry('handleDelete', { courseId: id })
+    const startTime = Date.now()
     try {
+      logger.apiRequest('DELETE', `/admin/courses/${id}`)
       await api.delete(`/admin/courses/${id}`)
+      logger.apiResponse('DELETE', `/admin/courses/${id}`, 200, { message: 'Course deleted' }, Date.now() - startTime)
       toast.success('Course deleted successfully')
       fetchCourses()
+      logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error deleting course:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to delete course', error, {
+        courseId: id,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to delete course')
+      logger.functionExit('handleDelete', { success: false, error: error.message, duration: `${duration}ms` })
     }
   }
 
@@ -618,14 +643,14 @@ const AdminCourseManagement = () => {
                 Trainer *
               </label>
               <select
-                value={formData.instructor}
+                value={formData.trainer}
                 onChange={(e) => {
-                  logger.stateChange('AdminCourseManagement', 'formData.instructor', formData.instructor, e.target.value)
+                  logger.stateChange('AdminCourseManagement', 'formData.trainer', formData.trainer, e.target.value)
                   logger.debug('Trainer selected', {
-                    selectedTrainer: e.target.value,
+                    selectedTrainerId: e.target.value,
                     availableTrainers: trainers.length
                   })
-                  setFormData({ ...formData, instructor: e.target.value })
+                  setFormData({ ...formData, trainer: e.target.value })
                 }}
                 className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
@@ -635,7 +660,7 @@ const AdminCourseManagement = () => {
                   {trainers.length === 0 ? 'No trainers available - Please add trainers first' : 'Select Trainer'}
                 </option>
                 {trainers.map(trainer => (
-                  <option key={trainer._id} value={trainer.name}>
+                  <option key={trainer._id} value={trainer._id}>
                     {trainer.name} {trainer.email ? `(${trainer.email})` : ''}
                   </option>
                 ))}

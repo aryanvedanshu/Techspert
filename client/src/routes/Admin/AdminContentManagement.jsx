@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
 import Modal from '../../components/UI/Modal'
+import logger from '../../utils/logger'
 
 const AdminContentManagement = () => {
   const [activeTab, setActiveTab] = useState('team')
@@ -41,6 +42,8 @@ const AdminContentManagement = () => {
   }, [])
 
   const fetchAllContent = async () => {
+    logger.functionEntry('fetchAllContent')
+    const startTime = Date.now()
     try {
       setLoading(true)
       const [teamRes, featuresRes, statisticsRes, faqsRes, contactRes, pageRes, settingsRes] = await Promise.all([
@@ -63,7 +66,11 @@ const AdminContentManagement = () => {
         siteSettings: settingsRes.data.data || {}
       })
     } catch (error) {
-      console.error('Error fetching content:', error)
+      logger.error('Failed to fetch content', error, {
+        duration: `${Date.now() - startTime}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to fetch content data')
     } finally {
       setLoading(false)
@@ -71,9 +78,12 @@ const AdminContentManagement = () => {
   }
 
   const handleSave = async () => {
+    logger.functionEntry('handleSave', { activeTab })
+    const startTime = Date.now()
     try {
       setSaving(true)
       
+      logger.debug('Saving content for all tabs', { activeTab })
       // Save each content type
       await Promise.all([
         api.put('/team', { team: formData.team }),
@@ -85,10 +95,20 @@ const AdminContentManagement = () => {
         api.put('/settings', formData.siteSettings)
       ])
 
+      logger.success('All content saved successfully', { duration: `${Date.now() - startTime}ms` })
       toast.success('All content saved successfully!')
+      logger.functionExit('handleSave', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving content:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save content', error, {
+        activeTab,
+        formData,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       toast.error('Failed to save content')
+      logger.functionExit('handleSave', { success: false, error: error.message, duration: `${duration}ms` })
     } finally {
       setSaving(false)
     }

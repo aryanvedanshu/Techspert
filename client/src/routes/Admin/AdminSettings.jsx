@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
 import Button from '../../components/UI/Button'
+import logger from '../../utils/logger'
 
 const AdminSettings = () => {
   const { isAuthenticated } = useAuth()
@@ -47,11 +48,21 @@ const AdminSettings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
+      logger.functionEntry('fetchSettings')
+      const startTime = Date.now()
       try {
+        logger.apiRequest('GET', '/settings')
         const response = await api.get('/settings')
+        logger.apiResponse('GET', '/settings', response.status, { hasData: !!response.data.data }, Date.now() - startTime)
         setSettings(response.data.data)
+        logger.functionExit('fetchSettings', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
-        console.error('Error fetching settings:', error)
+        const duration = Date.now() - startTime
+        logger.error('Failed to fetch settings', error, {
+          duration: `${duration}ms`,
+          errorMessage: error.message,
+          errorResponse: error.response?.data
+        })
         // Set default settings if fetch fails
         setSettings({
           siteName: 'Techspert',
@@ -85,6 +96,7 @@ const AdminSettings = () => {
             enableBlog: false,
           },
         })
+        logger.functionExit('fetchSettings', { success: false, usingDefaults: true, duration: `${duration}ms` })
       } finally {
         setLoading(false)
       }
@@ -96,13 +108,25 @@ const AdminSettings = () => {
   }, [isAuthenticated])
 
   const handleSave = async () => {
+    logger.functionEntry('handleSave')
+    const startTime = Date.now()
     setSaving(true)
     try {
+      logger.apiRequest('PUT', '/settings', settings)
       await api.put('/settings', settings)
+      logger.apiResponse('PUT', '/settings', 200, { message: 'Settings saved' }, Date.now() - startTime)
       alert('Settings saved successfully!')
+      logger.functionExit('handleSave', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
-      console.error('Error saving settings:', error)
+      const duration = Date.now() - startTime
+      logger.error('Failed to save settings', error, {
+        settings,
+        duration: `${duration}ms`,
+        errorMessage: error.message,
+        errorResponse: error.response?.data
+      })
       alert('Error saving settings')
+      logger.functionExit('handleSave', { success: false, error: error.message, duration: `${duration}ms` })
     } finally {
       setSaving(false)
     }

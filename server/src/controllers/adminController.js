@@ -671,7 +671,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     averageRating: Math.round(averageRating * 10) / 10,
     pendingProjects,
     activeUsers: activeEnrollments,
-    recentActivity: [], // TODO: Implement real recent activity
+    recentActivity: [], // NOTE: Recent activity feature - to be implemented with ActivityLog model
   }
 
   res.json({
@@ -727,6 +727,7 @@ export const getAllCoursesForAdmin = asyncHandler(async (req, res) => {
 
     logger.dbOperation('find', 'Course', query)
     const courses = await Course.find(query)
+      .populate('trainer', 'name email imageUrl specialization')
       .sort(sortObj)
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -789,6 +790,7 @@ export const getCourseForAdmin = asyncHandler(async (req, res) => {
     logger.dbOperation('findById', 'Course', { _id: id })
     
     const course = await Course.findById(id)
+      .populate('trainer', 'name email imageUrl specialization')
     
     if (!course) {
       logger.warn('Course not found', {
@@ -841,66 +843,161 @@ export const getCourseForAdmin = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/projects
 // @access  Private/Admin
 export const getAllProjectsForAdmin = asyncHandler(async (req, res) => {
-  const {
-    page = 1,
-    limit = 50,
-    search,
-    sort = 'createdAt',
-    order = 'desc',
-  } = req.query
-
-  // Build query - NO isApproved filter
-  let query = {}
-
-  if (search) {
-    query.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { studentName: { $regex: search, $options: 'i' } },
-      { technologies: { $in: [new RegExp(search, 'i')] } },
-    ]
-  }
-
-  const sortOrder = order === 'desc' ? -1 : 1
-  const sortObj = { [sort]: sortOrder }
-
-  const projects = await Project.find(query)
-    .sort(sortObj)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .lean()
-
-  const total = await Project.countDocuments(query)
-
-  res.json({
-    success: true,
-    count: projects.length,
-    total,
-    pages: Math.ceil(total / limit),
-    currentPage: parseInt(page),
-    data: projects,
+  const logger = (await import('../utils/logger.js')).default
+  const startTime = Date.now()
+  
+  logger.functionEntry('getAllProjectsForAdmin', {
+    query: req.query,
+    adminId: req.admin?._id,
+    adminEmail: req.admin?.email
   })
+
+  try {
+    const {
+      page = 1,
+      limit = 50,
+      search,
+      sort = 'createdAt',
+      order = 'desc',
+    } = req.query
+
+    logger.debug('Processing query parameters', {
+      page,
+      limit,
+      search,
+      sort,
+      order
+    })
+
+    // Build query - NO isApproved filter
+    let query = {}
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { studentName: { $regex: search, $options: 'i' } },
+        { technologies: { $in: [new RegExp(search, 'i')] } },
+      ]
+      logger.debug('Search query built', { searchTerm: search, queryPattern: query.$or })
+    }
+
+    const sortOrder = order === 'desc' ? -1 : 1
+    const sortObj = { [sort]: sortOrder }
+
+    logger.dbOperation('find', 'Project', query)
+    const projects = await Project.find(query)
+      .sort(sortObj)
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean()
+
+    logger.dbOperation('countDocuments', 'Project', query)
+    const total = await Project.countDocuments(query)
+
+    const duration = Date.now() - startTime
+    logger.info('Projects fetched successfully', {
+      count: projects.length,
+      total,
+      page,
+      limit,
+      duration: `${duration}ms`
+    })
+
+    logger.functionExit('getAllProjectsForAdmin', {
+      count: projects.length,
+      total,
+      duration: `${duration}ms`
+    })
+
+    res.json({
+      success: true,
+      count: projects.length,
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      data: projects,
+    })
+  } catch (error) {
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch projects for admin', error, {
+      query: req.query,
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getAllProjectsForAdmin', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
+  }
 })
 
 // @desc    Get single project for admin (no filters)
 // @route   GET /api/admin/projects/:id
 // @access  Private/Admin
 export const getProjectForAdmin = asyncHandler(async (req, res) => {
-  const { id } = req.params
+  const logger = (await import('../utils/logger.js')).default
+  const startTime = Date.now()
   
-  const project = await Project.findById(id)
-  
-  if (!project) {
-    return res.status(404).json({
-      success: false,
-      message: 'Project not found',
-    })
-  }
-  
-  res.json({
-    success: true,
-    data: project,
+  logger.functionEntry('getProjectForAdmin', {
+    projectId: req.params.id,
+    adminId: req.admin?._id,
+    adminEmail: req.admin?.email
   })
+
+  try {
+    const { id } = req.params
+    
+    logger.dbOperation('findById', 'Project', id)
+    const project = await Project.findById(id)
+    
+    if (!project) {
+      const duration = Date.now() - startTime
+      logger.warn('Project not found', {
+        projectId: id,
+        duration: `${duration}ms`
+      })
+      logger.functionExit('getProjectForAdmin', {
+        success: false,
+        notFound: true,
+        duration: `${duration}ms`
+      })
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found',
+      })
+    }
+    
+    const duration = Date.now() - startTime
+    logger.success('Project fetched successfully', {
+      projectId: id,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getProjectForAdmin', {
+      success: true,
+      duration: `${duration}ms`
+    })
+    
+    res.json({
+      success: true,
+      data: project,
+    })
+  } catch (error) {
+    const duration = Date.now() - startTime
+    logger.error('Failed to fetch project for admin', error, {
+      projectId: req.params.id,
+      adminId: req.admin?._id,
+      duration: `${duration}ms`
+    })
+    logger.functionExit('getProjectForAdmin', {
+      success: false,
+      error: error.message,
+      duration: `${duration}ms`
+    })
+    throw error
+  }
 })
 
 // @desc    Get enrollment statistics
@@ -1147,7 +1244,7 @@ export const updateCourseForAdmin = asyncHandler(async (req, res) => {
         new: true,
         runValidators: true,
       }
-    )
+    ).populate('trainer', 'name email imageUrl specialization')
 
     if (!course) {
       const duration = Date.now() - startTime
