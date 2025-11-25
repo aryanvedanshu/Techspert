@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Firebase Seeding Script</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            text-align: left;
+            display: none;
+        }
+        .log.show {
+            display: block;
+        }
+        .log-entry {
+            margin: 6px 0;
+            padding: 6px;
+            border-radius: 4px;
+        }
+        .log-success { 
+            color: #22c55e; 
+            background: #f0fdf4;
+        }
+        .log-error { 
+            color: #ef4444; 
+            background: #fef2f2;
+        }
+        .log-info { 
+            color: #3b82f6; 
+            background: #eff6ff;
+        }
+        .log-warning { 
+            color: #f59e0b; 
+            background: #fffbeb;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Complete Firebase Seeding</h1>
+        <p>This will add comprehensive data to all Firestore collections:<br>
+        <strong>Courses, Contact Info, Alumni, Trainers, Projects, Team, Features, Statistics, FAQs, Settings, Footer</strong></p>
+        
+        <button id="seedBtn" onclick="runSeed()">
+            <span id="btnText">Start Complete Seeding</span>
+        </button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        // ===========================================
+        // FIREBASE CONFIGURATION (Update with your .env values)
+        // ===========================================
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDbmxg64sBow92gz4KDR1TXyeRIpjBlp9Y",
+            authDomain: "techspert-4270a.firebaseapp.com",
+            projectId: "techspert-4270a",
+            storageBucket: "techspert-4270a.firebasestorage.app",
+            messagingSenderId: "114279061847",
+            appId: "1:114279061847:web:07d3b78f827a787b21c612"
+        };
+        // ===========================================
+
+        // Import Firebase from CDN
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, addDoc, setDoc, doc, Timestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        let db, firestoreFunctions;
+
+        async function initFirebase() {
+            try {
+                if (!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) {
+                    throw new Error('Firebase configuration is missing.');
+                }
+
+                const app = initializeApp(FIREBASE_CONFIG);
+                db = getFirestore(app);
+                firestoreFunctions = {
+                    collection,
+                    addDoc,
+                    setDoc,
+                    doc,
+                    Timestamp
+                };
+                
+                log('✅ Firebase initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Failed to initialize Firebase: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            logDiv.classList.add('show');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = message;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        async function runSeed() {
+            const btn = document.getElementById('seedBtn');
+            const btnText = document.getElementById('btnText');
+            
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> Seeding...';
+            log('🌱 Starting complete Firebase seeding...', 'info');
+
+            try {
+                await initFirebase();
+                
+                const { collection, addDoc, setDoc, doc, Timestamp } = firestoreFunctions;
+                const createTimestamp = () => Timestamp.now();
+
+                // 1. Seed Courses
+                log('📚 Seeding courses...', 'info');
+                const courses = [
+                    {
+                        title: 'Complete MERN Stack Development',
+                        slug: 'complete-mern-stack-development',
+                        description: 'Master the full MERN stack with hands-on projects and real-world applications. Build production-ready web applications from scratch.',
+                        shortDescription: 'Learn MongoDB, Express, React, and Node.js from scratch',
+                        thumbnailUrl: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800',
+                        price: 2999,
+                        originalPrice: 4999,
+                        duration: '12 weeks',
+                        level: 'intermediate',
+                        language: 'English',
+                        instructor: { name: 'John Doe', email: 'john@techspert.com' },
+                        rating: { average: 4.8, count: 1250 },
+                        studentsCount: 2500,
+                        isPublished: true,
+                        isFeatured: true,
+                        position: 1,
+                        tags: ['MERN', 'Full Stack', 'JavaScript'],
+                        syllabus: [
+                            { week: 1, topic: 'Introduction to MERN Stack', duration: '2 hours' },
+                            { week: 2, topic: 'MongoDB Fundamentals', duration: '3 hours' },
+                            { week: 3, topic: 'Express.js API Development', duration: '4 hours' },
+                            { week: 4, topic: 'React Fundamentals', duration: '5 hours' }
+                        ],
+                        modules: [
+                            { title: 'Introduction', duration: '30 min', order: 1 },
+                            { title: 'MongoDB Basics', duration: '45 min', order: 2 },
+                            { title: 'Express.js Setup', duration: '1 hour', order: 3 }
+                        ],
+                        whatYouWillLearn: ['Build full-stack web applications', 'Implement RESTful APIs', 'Handle authentication and authorization', 'Deploy applications to production'],
+                        requirements: ['Basic JavaScript knowledge', 'HTML/CSS fundamentals'],
+                        targetAudience: ['Web developers', 'Students', 'Career switchers'],
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        title: 'Artificial Intelligence & Machine Learning',
+                        slug: 'ai-machine-learning',
+                        description: 'Comprehensive AI/ML course covering neural networks, deep learning, and practical applications. Build real-world AI projects.',
+                        shortDescription: 'Master AI and ML with hands-on projects',
+                        thumbnailUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800',
+                        price: 3999,
+                        originalPrice: 5999,
+                        duration: '16 weeks',
+                        level: 'advanced',
+                        language: 'English',
+                        instructor: { name: 'Jane Smith', email: 'jane@techspert.com' },
+                        rating: { average: 4.9, count: 890 },
+                        studentsCount: 1800,
+                        isPublished: true,
+                        isFeatured: true,
+                        position: 2,
+                        tags: ['AI', 'Machine Learning', 'Python', 'TensorFlow'],
+                        syllabus: [
+                            { week: 1, topic: 'Introduction to AI/ML', duration: '2 hours' },
+                            { week: 2, topic: 'Neural Networks', duration: '4 hours' },
+                            { week: 3, topic: 'Deep Learning', duration: '5 hours' }
+                        ],
+                        modules: [
+                            { title: 'AI Fundamentals', duration: '1 hour', order: 1 },
+                            { title: 'Neural Networks', duration: '2 hours', order: 2 },
+                            { title: 'Deep Learning', duration: '3 hours', order: 3 }
+                        ],
+                        whatYouWillLearn: ['Build neural networks from scratch', 'Implement deep learning models', 'Work with TensorFlow and PyTorch', 'Deploy ML models to production'],
+                        requirements: ['Python programming', 'Basic math knowledge'],
+                        targetAudience: ['Data scientists', 'Developers', 'Researchers'],
+                        salePrice: 2999,
+                        saleStartDate: '2025-01-01',
+                        saleStartTime: '00:00',
+                        saleEndDate: '2025-12-31',
+                        saleEndTime: '23:59',
+                        isVisible: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        title: 'Data Science with Python',
+                        slug: 'data-science-python',
+                        description: 'Learn data analysis, visualization, and machine learning with Python. Master pandas, NumPy, and scikit-learn.',
+                        shortDescription: 'Master data science tools and techniques',
+                        thumbnailUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+                        price: 2499,
+                        originalPrice: 3999,
+                        duration: '10 weeks',
+                        level: 'intermediate',
+                        language: 'English',
+                        instructor: { name: 'Mike Johnson', email: 'mike@techspert.com' },
+                        rating: { average: 4.7, count: 650 },
+                        studentsCount: 1200,
+                        isPublished: true,
+                        isFeatured: false,
+                        position: 3,
+                        tags: ['Data Science', 'Python', 'Pandas', 'NumPy'],
+                        syllabus: [
+                            { week: 1, topic: 'Python for Data Science', duration: '3 hours' },
+                            { week: 2, topic: 'Data Analysis with Pandas', duration: '4 hours' },
+                            { week: 3, topic: 'Data Visualization', duration: '3 hours' }
+                        ],
+                        modules: [
+                            { title: 'Python Basics', duration: '1 hour', order: 1 },
+                            { title: 'Pandas Introduction', duration: '1.5 hours', order: 2 },
+                            { title: 'Data Visualization', duration: '2 hours', order: 3 }
+                        ],
+                        whatYouWillLearn: ['Analyze large datasets', 'Create data visualizations', 'Build predictive models', 'Work with real-world data'],
+                        requirements: ['Basic Python knowledge'],
+                        targetAudience: ['Data analysts', 'Business analysts', 'Students'],
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    }
+                ];
+                
+                for (const course of courses) {
+                    await addDoc(collection(db, 'courses'), course);
+                    log(`✅ Added course: ${course.title}`, 'success');
+                }
+
+                // 2. Seed Contact Info (single document with main object)
+                log('📞 Seeding contact information...', 'info');
+                const contactInfo = {
+                    main: {
+                        address: {
+                            street: '123 Tech Street',
+                            city: 'Mumbai',
+                            state: 'Maharashtra',
+                            zipCode: '400001',
+                            country: 'India',
+                            fullAddress: '123 Tech Street, Mumbai, Maharashtra 400001, India'
+                        },
+                        phone: {
+                            primary: '+91-9876543210',
+                            support: '+91-9876543211',
+                            sales: '+91-9876543212'
+                        },
+                        email: {
+                            general: 'contact@techspert.com',
+                            support: 'support@techspert.com',
+                            sales: 'sales@techspert.com',
+                            info: 'info@techspert.com'
+                        },
+                        officeHours: {
+                            weekdays: 'Monday - Friday: 9:00 AM - 6:00 PM IST',
+                            weekends: 'Saturday: 10:00 AM - 4:00 PM IST',
+                            holidays: 'Closed on Sundays and public holidays'
+                        },
+                        socialLinks: {
+                            facebook: 'https://facebook.com/techspert',
+                            twitter: 'https://twitter.com/techspert',
+                            linkedin: 'https://linkedin.com/company/techspert',
+                            instagram: 'https://instagram.com/techspert',
+                            youtube: 'https://youtube.com/techspert',
+                            github: 'https://github.com/techspert'
+                        }
+                    }
+                };
+                await setDoc(doc(db, 'contactInfo', 'main'), contactInfo);
+                log('✅ Added contact information', 'success');
+
+                // 3. Seed Alumni
+                log('👥 Seeding alumni...', 'info');
+                const alumni = [
+                    {
+                        name: 'Sarah Chen',
+                        imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400',
+                        currentPosition: 'Senior Full Stack Developer',
+                        company: 'Google',
+                        location: 'San Francisco, CA',
+                        graduationDate: '2023-06-15',
+                        course: 'Complete MERN Stack Development',
+                        testimonial: 'Techspert transformed my career. The hands-on projects and expert guidance helped me land my dream job at Google. The MERN stack course was comprehensive and practical.',
+                        achievements: ['Promoted to Senior Developer', 'Led team of 5 developers', 'Launched 3 major products'],
+                        skills: ['React', 'Node.js', 'MongoDB', 'TypeScript', 'AWS'],
+                        linkedinUrl: 'https://linkedin.com/in/sarah-chen',
+                        email: 'sarah.chen@example.com',
+                        isFeatured: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'David Kumar',
+                        imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+                        currentPosition: 'Machine Learning Engineer',
+                        company: 'Microsoft',
+                        location: 'Seattle, WA',
+                        graduationDate: '2023-08-20',
+                        course: 'Artificial Intelligence & Machine Learning',
+                        testimonial: 'The AI/ML course gave me the skills I needed to break into the tech industry. The deep learning modules were exceptional. Highly recommended!',
+                        achievements: ['Published 2 research papers', 'Built ML models for production', 'Mentored 10+ students'],
+                        skills: ['Python', 'TensorFlow', 'PyTorch', 'Deep Learning', 'Computer Vision'],
+                        linkedinUrl: 'https://linkedin.com/in/david-kumar',
+                        email: 'david.kumar@example.com',
+                        isFeatured: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'Priya Sharma',
+                        imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+                        currentPosition: 'Data Scientist',
+                        company: 'Amazon',
+                        location: 'Bangalore, India',
+                        graduationDate: '2023-09-10',
+                        course: 'Data Science with Python',
+                        testimonial: 'The data science course was exactly what I needed. I learned pandas, NumPy, and machine learning from scratch. Now I work at Amazon!',
+                        achievements: ['Built predictive models for e-commerce', 'Improved recommendation accuracy by 30%', 'Presented at 2 data science conferences'],
+                        skills: ['Python', 'Pandas', 'NumPy', 'Scikit-learn', 'SQL'],
+                        linkedinUrl: 'https://linkedin.com/in/priya-sharma',
+                        email: 'priya.sharma@example.com',
+                        isFeatured: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'Raj Patel',
+                        imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+                        currentPosition: 'Full Stack Developer',
+                        company: 'Infosys',
+                        location: 'Pune, India',
+                        graduationDate: '2023-07-05',
+                        course: 'Complete MERN Stack Development',
+                        testimonial: 'Best investment in my career! The course structure and projects helped me transition from a junior to a senior developer role.',
+                        achievements: ['Led 2 major projects', 'Mentored junior developers', 'Received employee of the year award'],
+                        skills: ['MERN Stack', 'JavaScript', 'TypeScript', 'Docker', 'Kubernetes'],
+                        linkedinUrl: 'https://linkedin.com/in/raj-patel',
+                        email: 'raj.patel@example.com',
+                        isFeatured: false,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    }
+                ];
+                
+                for (const alum of alumni) {
+                    await addDoc(collection(db, 'alumni'), alum);
+                    log(`✅ Added alumni: ${alum.name}`, 'success');
+                }
+
+                // 4. Seed Trainers
+                log('👨‍🏫 Seeding trainers...', 'info');
+                const trainers = [
+                    {
+                        name: 'John Doe',
+                        email: 'john@techspert.com',
+                        imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+                        bio: '10+ years of experience in full-stack development. Expert in MERN stack and cloud technologies. Passionate about teaching and helping students succeed.',
+                        specialization: ['MERN Stack', 'Node.js', 'React', 'MongoDB', 'AWS'],
+                        experience: 10,
+                        rating: { average: 4.9, count: 1250 },
+                        totalStudents: 2500,
+                        totalCourses: 5,
+                        isActive: true,
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/johndoe',
+                            twitter: 'https://twitter.com/johndoe',
+                            github: 'https://github.com/johndoe'
+                        },
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'Jane Smith',
+                        email: 'jane@techspert.com',
+                        imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+                        bio: 'AI/ML researcher with 8 years of experience. Published author and industry expert. Specializes in deep learning and neural networks.',
+                        specialization: ['Machine Learning', 'Deep Learning', 'Neural Networks', 'Python', 'TensorFlow'],
+                        experience: 8,
+                        rating: { average: 4.8, count: 890 },
+                        totalStudents: 1800,
+                        totalCourses: 3,
+                        isActive: true,
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/janesmith',
+                            twitter: 'https://twitter.com/janesmith',
+                            github: 'https://github.com/janesmith'
+                        },
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'Mike Johnson',
+                        email: 'mike@techspert.com',
+                        imageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+                        bio: 'Data science expert with 12 years of experience. Worked at top tech companies. Expert in Python, pandas, and machine learning.',
+                        specialization: ['Data Science', 'Python', 'Pandas', 'NumPy', 'Scikit-learn'],
+                        experience: 12,
+                        rating: { average: 4.7, count: 650 },
+                        totalStudents: 1200,
+                        totalCourses: 4,
+                        isActive: true,
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/mikejohnson',
+                            twitter: 'https://twitter.com/mikejohnson',
+                            github: 'https://github.com/mikejohnson'
+                        },
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        name: 'Emily Davis',
+                        email: 'emily@techspert.com',
+                        imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+                        bio: 'Full-stack developer and DevOps engineer with 9 years of experience. Expert in cloud infrastructure and CI/CD pipelines.',
+                        specialization: ['DevOps', 'Docker', 'Kubernetes', 'AWS', 'CI/CD'],
+                        experience: 9,
+                        rating: { average: 4.8, count: 420 },
+                        totalStudents: 800,
+                        totalCourses: 2,
+                        isActive: true,
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/emilydavis',
+                            github: 'https://github.com/emilydavis'
+                        },
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    }
+                ];
+                
+                for (const trainer of trainers) {
+                    await addDoc(collection(db, 'trainers'), trainer);
+                    log(`✅ Added trainer: ${trainer.name}`, 'success');
+                }
+
+                // 5. Seed Projects
+                log('🎨 Seeding projects...', 'info');
+                const projects = [
+                    {
+                        title: 'E-Commerce Platform',
+                        description: 'A full-featured e-commerce platform built with MERN stack, including payment integration and admin dashboard.',
+                        imageUrl: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
+                        images: [
+                            'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
+                            'https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800'
+                        ],
+                        course: 'Complete MERN Stack Development',
+                        studentName: 'Alice Johnson',
+                        studentEmail: 'alice@example.com',
+                        studentImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+                        technologies: ['React', 'Node.js', 'MongoDB', 'Stripe'],
+                        features: ['User authentication', 'Product catalog', 'Shopping cart', 'Payment processing'],
+                        challenges: 'Implementing real-time inventory updates',
+                        learnings: 'Learned about payment gateway integration and state management',
+                        difficulty: 'intermediate',
+                        duration: '8 weeks',
+                        completionDate: '2024-12-15',
+                        rating: 4.8,
+                        githubUrl: 'https://github.com/alice/ecommerce-platform',
+                        liveUrl: 'https://ecommerce-demo.techspert.com',
+                        videoUrl: 'https://www.youtube.com/watch?v=demo',
+                        isApproved: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    },
+                    {
+                        title: 'AI Image Classifier',
+                        description: 'Machine learning model that classifies images using convolutional neural networks.',
+                        imageUrl: 'https://images.unsplash.com/photo-1527477396000-e27137b2c8b8?w=800',
+                        images: ['https://images.unsplash.com/photo-1527477396000-e27137b2c8b8?w=800'],
+                        course: 'Artificial Intelligence & Machine Learning',
+                        studentName: 'Bob Williams',
+                        studentEmail: 'bob@example.com',
+                        studentImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+                        technologies: ['Python', 'TensorFlow', 'Keras', 'OpenCV'],
+                        features: ['Image preprocessing', 'CNN architecture', 'Model training', 'Prediction API'],
+                        challenges: 'Optimizing model accuracy and training time',
+                        learnings: 'Deep understanding of neural networks and image processing',
+                        difficulty: 'advanced',
+                        duration: '12 weeks',
+                        completionDate: '2024-11-20',
+                        rating: 4.9,
+                        githubUrl: 'https://github.com/bob/ai-image-classifier',
+                        liveUrl: 'https://ai-classifier.techspert.com',
+                        isApproved: true,
+                        createdAt: createTimestamp(),
+                        updatedAt: createTimestamp()
+                    }
+                ];
+                
+                for (const project of projects) {
+                    await addDoc(collection(db, 'projects'), project);
+                    log(`✅ Added project: ${project.title}`, 'success');
+                }
+
+                // 6. Seed Team
+                log('👔 Seeding team...', 'info');
+                const team = [
+                    {
+                        name: 'Alex Thompson',
+                        role: 'CEO & Founder',
+                        imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+                        bio: 'Visionary leader with 15+ years in tech education',
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/alexthompson',
+                            twitter: 'https://twitter.com/alexthompson'
+                        },
+                        order: 1,
+                        isActive: true,
+                        featured: true
+                    },
+                    {
+                        name: 'Emily Davis',
+                        role: 'CTO',
+                        imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+                        bio: 'Tech expert specializing in scalable platforms',
+                        socialLinks: {
+                            linkedin: 'https://linkedin.com/in/emilydavis'
+                        },
+                        order: 2,
+                        isActive: true,
+                        featured: true
+                    }
+                ];
+                
+                for (const member of team) {
+                    await addDoc(collection(db, 'team'), member);
+                    log(`✅ Added team member: ${member.name}`, 'success');
+                }
+
+                // 7. Seed Features
+                log('⭐ Seeding features...', 'info');
+                const features = [
+                    {
+                        title: 'Live Online Classes',
+                        description: 'Interactive live sessions with expert instructors',
+                        icon: 'Video',
+                        order: 1,
+                        isActive: true,
+                        featured: true
+                    },
+                    {
+                        title: 'Hands-On Projects',
+                        description: 'Build real-world projects to enhance your portfolio',
+                        icon: 'Code',
+                        order: 2,
+                        isActive: true,
+                        featured: true
+                    },
+                    {
+                        title: 'Industry Certificates',
+                        description: 'Get recognized certificates upon course completion',
+                        icon: 'Award',
+                        order: 3,
+                        isActive: true,
+                        featured: true
+                    }
+                ];
+                
+                for (const feature of features) {
+                    await addDoc(collection(db, 'features'), feature);
+                    log(`✅ Added feature: ${feature.title}`, 'success');
+                }
+
+                // 8. Seed Statistics
+                log('📊 Seeding statistics...', 'info');
+                const statistics = [
+                    { label: 'Students Enrolled', value: '10,000+', icon: 'Users', order: 1, featured: true },
+                    { label: 'Courses Available', value: '50+', icon: 'BookOpen', order: 2, featured: true },
+                    { label: 'Success Rate', value: '95%', icon: 'TrendingUp', order: 3, featured: true },
+                    { label: 'Industry Partners', value: '100+', icon: 'Building', order: 4, featured: true }
+                ];
+                
+                for (const stat of statistics) {
+                    await addDoc(collection(db, 'statistics'), stat);
+                    log(`✅ Added statistic: ${stat.label}`, 'success');
+                }
+
+                // 9. Seed FAQs
+                log('❓ Seeding FAQs...', 'info');
+                const faqs = [
+                    {
+                        question: 'What is the course duration?',
+                        answer: 'Course durations vary from 8 to 16 weeks depending on the complexity and depth of the course.',
+                        category: 'general',
+                        order: 1,
+                        isActive: true,
+                        featured: true
+                    },
+                    {
+                        question: 'Do I get a certificate?',
+                        answer: 'Yes, you will receive an industry-recognized certificate upon successful completion of the course.',
+                        category: 'certificates',
+                        order: 2,
+                        isActive: true,
+                        featured: true
+                    },
+                    {
+                        question: 'Can I access course materials after completion?',
+                        answer: 'Yes, you will have lifetime access to all course materials, including recordings and resources.',
+                        category: 'access',
+                        order: 3,
+                        isActive: true,
+                        featured: true
+                    }
+                ];
+                
+                for (const faq of faqs) {
+                    await addDoc(collection(db, 'faqs'), faq);
+                    log(`✅ Added FAQ: ${faq.question}`, 'success');
+                }
+
+                // 10. Seed Site Settings
+                log('⚙️ Seeding site settings...', 'info');
+                const siteSettings = {
+                    siteName: 'Techspert',
+                    siteDescription: 'Learn cutting-edge technology skills with industry experts',
+                    siteTagline: 'Empowering the next generation of tech professionals',
+                    theme: {
+                        primary: '#0ea5e9',
+                        secondary: '#14b8a6',
+                        accent: '#a855f7',
+                        background: '#ffffff'
+                    },
+                    contact: {
+                        email: 'contact@techspert.com',
+                        supportEmail: 'support@techspert.com',
+                        phone: '+91-9876543210',
+                        address: '123 Tech Street, Mumbai, Maharashtra 400001'
+                    },
+                    homePage: {
+                        hero: {
+                            title: 'Master the Future of Technology',
+                            subtitle: 'Learn cutting-edge skills from industry experts',
+                            ctaText: 'Start Learning Today'
+                        },
+                        stats: {
+                            title: 'Our Impact',
+                            subtitle: 'Join thousands of successful graduates'
+                        },
+                        features: {
+                            title: 'Why Choose Techspert?',
+                            subtitle: 'We provide comprehensive learning experiences'
+                        }
+                    },
+                    features: {
+                        enableRegistration: true,
+                        enableComments: true,
+                        enableRatings: true,
+                        enableCertificates: true,
+                        enableNewsletter: true,
+                        enableBlog: false
+                    }
+                };
+                await setDoc(doc(db, 'siteSettings', 'main'), siteSettings);
+                log('✅ Added site settings', 'success');
+
+                // 11. Seed Footer
+                log('🔗 Seeding footer...', 'info');
+                const footer = {
+                    copyright: '© 2025 Techspert. All rights reserved.',
+                    links: {
+                        quickLinks: [
+                            { label: 'About Us', url: '/about' },
+                            { label: 'Courses', url: '/courses' },
+                            { label: 'Projects', url: '/projects' },
+                            { label: 'Contact', url: '/contact' }
+                        ],
+                        resources: [
+                            { label: 'Blog', url: '/blog' },
+                            { label: 'FAQs', url: '/faqs' },
+                            { label: 'Certificates', url: '/certificates' },
+                            { label: 'Alumni', url: '/alumni' }
+                        ],
+                        legal: [
+                            { label: 'Privacy Policy', url: '/privacy' },
+                            { label: 'Terms of Service', url: '/terms' },
+                            { label: 'Refund Policy', url: '/refund' }
+                        ]
+                    },
+                    socialLinks: {
+                        facebook: 'https://facebook.com/techspert',
+                        twitter: 'https://twitter.com/techspert',
+                        linkedin: 'https://linkedin.com/company/techspert',
+                        instagram: 'https://instagram.com/techspert'
+                    }
+                };
+                await setDoc(doc(db, 'footer', 'main'), footer);
+                log('✅ Added footer', 'success');
+
+                log('🎉 Complete seeding finished successfully!', 'success');
+                btnText.textContent = '✅ Seeding Complete!';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btnText.textContent = 'Start Complete Seeding';
+                }, 2000);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                if (error.stack) {
+                    log(`Stack: ${error.stack}`, 'error');
+                }
+                console.error('Seeding error:', error);
+                btnText.textContent = '❌ Error - Try Again';
+                btn.disabled = false;
+            }
+        }
+
+        // Expose function globally
+        window.runSeed = runSeed;
+    </script>
+</body>
+</html>
+
