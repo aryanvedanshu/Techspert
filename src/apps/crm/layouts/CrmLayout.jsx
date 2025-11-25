@@ -6,7 +6,7 @@ import {
     LogOut, Bell
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../../contexts/AuthContext'
 
 const SidebarItem = ({ icon: Icon, label, path, active }) => (
     <Link
