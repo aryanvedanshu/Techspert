@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, Reorder } from 'framer-motion'
 import { Plus, MoreHorizontal, Search, Filter } from 'lucide-react'
-import { crmService } from '../../services/crmService'
+import { crmService } from '../services/crmService'
 
 // Mock Data for Development
 const MOCK_STAGES = [
