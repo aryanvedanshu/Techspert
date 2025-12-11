@@ -1,0 +1,377 @@
+{
+    "firestore": {
+        "courses": {
+            "docId": "auto-ID",
+            "fields": {
+                "title": "string",
+                "slug": "string",
+                "description": "string (HTML/Rich Text)",
+                "shortDescription": "string",
+                "category": "string",
+                "level": "string (Beginner, Intermediate, Advanced)",
+                "price": "number",
+                "discountPrice": "number",
+                "duration": "string",
+                "instructor": "string (ref: trainers/{id})",
+                "thumbnail": "string (URL)",
+                "isPublished": "boolean",
+                "isFeatured": "boolean",
+                "position": "number",
+                "syllabus": "array of objects [{ title: string, content: string, duration: string }]",
+                "skills": "array of strings",
+                "createdAt": "timestamp",
+                "updatedAt": "timestamp"
+            },
+            "indexes": [
+                "isPublished",
+                "isFeatured",
+                "position",
+                "category"
+            ]
+        },
+        "students": {
+            "docId": "auth-UID",
+            "fields": {
+                "email": "string",
+                "displayName": "string",
+                "photoURL": "string (URL)",
+                "phoneNumber": "string",
+                "role": "string (student)",
+                "enrolledCourses": "array of strings (courseIds)",
+                "completedCourses": "array of strings (courseIds)",
+                "certificates": "array of strings (certificateIds)",
+                "isActive": "boolean",
+                "createdAt": "timestamp",
+                "lastLogin": "timestamp"
+            }
+        },
+        "projects": {
+            "docId": "auto-ID",
+            "fields": {
+                "title": "string",
+                "description": "string",
+                "studentName": "string",
+                "studentId": "string (ref: students/{id})",
+                "category": "string",
+                "tags": "array of strings",
+                "techStack": "array of strings",
+                "githubUrl": "string (URL)",
+                "liveUrl": "string (URL)",
+                "images": "array of strings (URLs)",
+                "status": "string (pending, approved, rejected)",
+                "isFeatured": "boolean",
+                "completionDate": "timestamp",
+                "createdAt": "timestamp"
+            },
+            "indexes": [
+                "status",
+                "isFeatured",
+                "category"
+            ]
+        },
+        "alumni": {
+            "docId": "auto-ID",
+            "fields": {
+                "name": "string",
+                "email": "string",
+                "course": "string",
+                "company": "string",
+                "designation": "string",
+                "city": "string",
+                "imageUrl": "string (URL)",
+                "linkedinUrl": "string (URL)",
+                "testimonial": "string",
+                "graduationDate": "timestamp",
+                "skills": "array of strings",
+                "rating": "number",
+                "isApproved": "boolean",
+                "isFeatured": "boolean",
+                "status": "string (active, inactive)",
+                "createdAt": "timestamp"
+            },
+            "indexes": [
+                "isApproved",
+                "isFeatured",
+                "company"
+            ]
+        },
+        "trainers": {
+            "docId": "auto-ID",
+            "fields": {
+                "name": "string",
+                "email": "string",
+                "expertise": "string",
+                "bio": "string",
+                "imageUrl": "string (URL)",
+                "socialLinks": "object { linkedin: string, twitter: string, website: string }",
+                "isActive": "boolean",
+                "createdAt": "timestamp"
+            }
+        },
+        "team": {
+            "docId": "auto-ID",
+            "fields": {
+                "name": "string",
+                "role": "string",
+                "bio": "string",
+                "imageUrl": "string (URL)",
+                "order": "number",
+                "featured": "boolean",
+                "isActive": "boolean",
+                "socialLinks": "object { linkedin: string, twitter: string }",
+                "createdAt": "timestamp"
+            }
+        },
+        "settings": {
+            "docId": "site-settings (single doc)",
+            "fields": {
+                "siteName": "string",
+                "logoUrl": "string (URL)",
+                "faviconUrl": "string (URL)",
+                "primaryColor": "string (hex)",
+                "secondaryColor": "string (hex)",
+                "accentColor": "string (hex)",
+                "contactEmail": "string",
+                "contactPhone": "string",
+                "address": "string",
+                "socialLinks": "object { facebook: string, twitter: string, instagram: string, linkedin: string, youtube: string }",
+                "metaDescription": "string",
+                "metaKeywords": "string",
+                "maintenanceMode": "boolean",
+                "updatedAt": "timestamp"
+            }
+        },
+        "banners": {
+            "docId": "auto-ID",
+            "fields": {
+                "title": "string",
+                "subtitle": "string",
+                "imageUrl": "string (URL)",
+                "linkUrl": "string",
+                "buttonText": "string",
+                "position": "number",
+                "isActive": "boolean",
+                "startDate": "timestamp",
+                "endDate": "timestamp",
+                "createdAt": "timestamp"
+            }
+        },
+        "admins": {
+            "docId": "auth-UID",
+            "fields": {
+                "email": "string",
+                "displayName": "string",
+                "role": "string (admin, super-admin, editor, viewer)",
+                "permissions": "array of strings",
+                "isActive": "boolean",
+                "lastLogin": "timestamp",
+                "createdAt": "timestamp"
+            }
+        },
+        "transactions": {
+            "docId": "auto-ID",
+            "fields": {
+                "transactionId": "string",
+                "studentId": "string (ref: students/{id})",
+                "courseId": "string (ref: courses/{id})",
+                "amount": "number",
+                "currency": "string",
+                "status": "string (pending, success, failed, refunded)",
+                "paymentMethod": "string",
+                "processedAt": "timestamp",
+                "metadata": "object"
+            },
+            "indexes": [
+                "studentId",
+                "status",
+                "processedAt"
+            ]
+        },
+        "reviews": {
+            "docId": "auto-ID",
+            "fields": {
+                "courseId": "string (ref: courses/{id})",
+                "studentId": "string (ref: students/{id})",
+                "studentName": "string",
+                "rating": "number (1-5)",
+                "comment": "string",
+                "isApproved": "boolean",
+                "createdAt": "timestamp"
+            }
+        },
+        "enrollments": {
+            "docId": "auto-ID",
+            "fields": {
+                "studentId": "string (ref: students/{id})",
+                "courseId": "string (ref: courses/{id})",
+                "status": "string (active, completed, dropped)",
+                "progress": "number (0-100)",
+                "enrolledAt": "timestamp",
+                "completedAt": "timestamp"
+            },
+            "indexes": [
+                "studentId",
+                "courseId",
+                "status"
+            ]
+        },
+        "categories": {
+            "docId": "auto-ID",
+            "fields": {
+                "name": "string",
+                "slug": "string",
+                "description": "string",
+                "icon": "string (URL or icon name)",
+                "isActive": "boolean",
+                "order": "number"
+            }
+        },
+        "notifications": {
+            "docId": "auto-ID",
+            "fields": {
+                "userId": "string (ref: students/{id} or admins/{id})",
+                "title": "string",
+                "message": "string",
+                "type": "string (info, success, warning, error)",
+                "isRead": "boolean",
+                "link": "string",
+                "createdAt": "timestamp"
+            },
+            "indexes": [
+                "userId",
+                "isRead",
+                "createdAt"
+            ]
+        },
+        "homepage": {
+            "docId": "layout-config (single doc)",
+            "fields": {
+                "heroSection": "object { title: string, subtitle: string, ctaText: string, ctaLink: string, backgroundUrl: string }",
+                "featuredCoursesTitle": "string",
+                "statsSection": "array of objects { label: string, value: string, icon: string }",
+                "testimonialsTitle": "string",
+                "showPartners": "boolean",
+                "updatedAt": "timestamp"
+            }
+        },
+        "theme": {
+            "docId": "active-theme (single doc)",
+            "fields": {
+                "mode": "string (light, dark, system)",
+                "fontFamily": "string",
+                "borderRadius": "string",
+                "colors": "object { primary: string, secondary: string, accent: string, background: string, text: string }",
+                "updatedAt": "timestamp"
+            }
+        },
+        "company_info": {
+            "docId": "details (single doc)",
+            "fields": {
+                "name": "string",
+                "registrationNumber": "string",
+                "taxId": "string",
+                "foundedYear": "number",
+                "mission": "string",
+                "vision": "string",
+                "termsUrl": "string",
+                "privacyUrl": "string",
+                "updatedAt": "timestamp"
+            }
+        }
+    },
+    "storage": {
+        "courses": "storage/courses/{courseId}/{filename}",
+        "projects": "storage/projects/{projectId}/{filename}",
+        "alumni": "storage/alumni/{alumniId}/{filename}",
+        "trainers": "storage/trainers/{trainerId}/{filename}",
+        "team": "storage/team/{memberId}/{filename}",
+        "settings": "storage/settings/{filename}",
+        "banners": "storage/banners/{bannerId}/{filename}",
+        "users": "storage/users/{userId}/avatar.jpg"
+    },
+    "admin_functions": {
+        "website_appearance": [
+            "Update Logo & Favicon",
+            "Customize Theme Colors (Primary, Secondary, Accent)",
+            "Edit Homepage Hero Banners",
+            "Manage Carousel Sliders",
+            "Update Footer Information",
+            "Manage Social Media Links",
+            "Update Company Information"
+        ],
+        "content_management": [
+            "Courses: Create, Read, Update, Delete, Publish/Unpublish, Reorder",
+            "Alumni: Add, Edit, Remove, Approve, Feature",
+            "Student Projects: Review, Approve, Reject, Feature",
+            "Trainers/Team: Add, Edit, Remove, Toggle Active Status",
+            "Categories/Tags: Manage course and project categories",
+            "Skills List: Maintain global skills database",
+            "Testimonials: Moderate and publish reviews",
+            "Blog/Updates: Publish platform news"
+        ],
+        "business_operations": [
+            "Pricing Controls: Set base prices and discounts",
+            "Coupons/Sales: Create and manage promo codes",
+            "Enrollment Approvals: Manual override for enrollments",
+            "Email Templates: Edit automated email content"
+        ],
+        "security": [
+            "Role Management: Assign Super Admin, Admin, Editor, Viewer roles",
+            "Permissions: Granular access control per module",
+            "Audit Logs: View admin activity history"
+        ]
+    },
+    "automations": {
+        "course_publish": "Notify subscribed users via email/notification",
+        "new_enrollment": "Email admin, Send welcome email to student, Unlock course content",
+        "project_submission": "Notify admins for review",
+        "project_update": "Recalculate student stats and global project count",
+        "alumni_added": "Update homepage alumni count",
+        "payment_success": "Generate invoice, Enroll student, Update revenue stats",
+        "payment_failed": "Notify student, Log failed transaction"
+    },
+    "api_endpoints": {
+        "courses": {
+            "GET": "/api/courses (List all public)",
+            "GET_ID": "/api/courses/:id (Get details)",
+            "POST": "/api/admin/courses (Create)",
+            "PUT": "/api/admin/courses/:id (Update)",
+            "DELETE": "/api/admin/courses/:id (Delete)"
+        },
+        "alumni": {
+            "GET": "/api/alumni (List all)",
+            "POST": "/api/admin/alumni (Create)",
+            "PUT": "/api/admin/alumni/:id (Update)",
+            "DELETE": "/api/admin/alumni/:id (Delete)"
+        },
+        "projects": {
+            "GET": "/api/projects (List approved)",
+            "POST": "/api/projects (Submit)",
+            "PUT": "/api/admin/projects/:id (Approve/Reject)",
+            "DELETE": "/api/admin/projects/:id (Delete)"
+        },
+        "settings": {
+            "GET": "/api/settings (Public config)",
+            "PUT": "/api/admin/settings (Update site config)"
+        },
+        "upload": {
+            "POST": "/api/upload (Handle file uploads to Firebase Storage)"
+        }
+    },
+    "security": {
+        "firestore_rules": "Strict read/write rules based on auth.token.role",
+        "storage_rules": "Public read for content, Admin write for assets, User write for own submissions",
+        "roles": {
+            "super-admin": "Full access to all collections and settings",
+            "admin": "Access to content and user management, no settings access",
+            "editor": "Can edit content but cannot publish or delete",
+            "viewer": "Read-only access to admin dashboard"
+        }
+    },
+    "notes": {
+        "tech_stack": "React + Firebase + Firestore + TailwindCSS",
+        "auth_provider": "Firebase Authentication (Email/Password, Google)",
+        "hosting": "Firebase Hosting",
+        "deployment": "GitHub Actions -> Firebase Hosting"
+    }
+}

@@ -168,17 +168,32 @@ export const AuthProvider = ({ children }) => {
       let userDocSnap = await getDoc(userDocRef)
 
       let additionalData = null
+      let isFromAdminCollection = false
+
       if (userDocSnap.exists()) {
         additionalData = { id: userDocSnap.id, ...userDocSnap.data() }
-      } else if (isAdminLogin) {
-        // Check admin collection
-        const adminDocRef = doc(db, 'admins', firebaseUser.uid)
-        const adminDocSnap = await getDoc(adminDocRef)
+      }
 
-        if (adminDocSnap.exists()) {
-          additionalData = { id: adminDocSnap.id, ...adminDocSnap.data() }
-        } else {
-          throw new Error('Admin account not found')
+      // If admin login, we need to verify admin status
+      if (isAdminLogin) {
+        // First check if the user found in 'users' has admin role
+        const hasAdminRole = additionalData?.role === 'admin' ||
+          additionalData?.role === 'super-admin' ||
+          additionalData?.isAdmin === true
+
+        if (!hasAdminRole) {
+          // If not found or not admin in 'users', check 'admins' collection (legacy/strict mode)
+          const adminDocRef = doc(db, 'admins', firebaseUser.uid)
+          const adminDocSnap = await getDoc(adminDocRef)
+
+          if (adminDocSnap.exists()) {
+            additionalData = { id: adminDocSnap.id, ...adminDocSnap.data() }
+            isFromAdminCollection = true
+          } else {
+            // If neither has admin role in users nor exists in admins
+            await signOut(auth)
+            throw new Error('Access denied. Admin privileges required.')
+          }
         }
       }
 
@@ -191,10 +206,11 @@ export const AuthProvider = ({ children }) => {
         ...additionalData
       }
 
-      // Check if user is admin
+      // Check if user is admin (double check for safety)
       const isAdminUser = additionalData?.role === 'admin' ||
         additionalData?.role === 'super-admin' ||
-        additionalData?.isAdmin === true
+        additionalData?.isAdmin === true ||
+        isFromAdminCollection
 
       // If admin login was requested but user is not admin, throw error
       if (isAdminLogin && !isAdminUser) {
