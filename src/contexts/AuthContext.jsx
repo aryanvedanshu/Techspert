@@ -1,3 +1,19 @@
+/**
+ * AuthContext.jsx
+ * 
+ * Provides authentication state and functions throughout the application.
+ * 
+ * Features:
+ * - Firebase Authentication integration (email/password)
+ * - Role-based access control (student, admin, super-admin)
+ * - 30-minute session timeout with activity tracking
+ * - Automatic logout on session expiration
+ * 
+ * Usage:
+ *   const { user, login, logout, isAuthenticated, isAdmin } = useAuth()
+ * 
+ * @module contexts/AuthContext
+ */
 import { createContext, useContext, useState, useEffect } from 'react'
 import {
   signInWithEmailAndPassword,
@@ -151,6 +167,21 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
+  /**
+   * Login function for both regular users and admins.
+   * 
+   * For admin login (isAdminLogin=true):
+   * 1. First checks if user exists in 'users' collection with role 'admin' or 'super-admin'.
+   * 2. If not found with admin role, falls back to checking 'admins' collection.
+   * 3. Throws error if neither condition is met.
+   * 
+   * Session timeout: 30 minutes of inactivity will auto-logout the user.
+   * 
+   * @param {string} email - User's email address
+   * @param {string} password - User's password
+   * @param {boolean} isAdminLogin - True for admin panel login, false for regular user login
+   * @returns {Object} - { success: boolean, user?: Object, error?: string }
+   */
   const login = async (email, password, isAdminLogin = false) => {
     try {
       frontendAuthLogger.loginAttempt(email, isAdminLogin)
