@@ -66,15 +66,15 @@ const AdminTeam = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    logger.functionEntry('handleSubmit', { editingMember: editingMember?._id })
+    logger.functionEntry('handleSubmit', { editingMember: editingMember?.id })
     const startTime = Date.now()
     try {
       if (editingMember) {
-        logger.apiRequest('PUT', `/team/${editingMember._id}`, formData)
-        await api.put(`/team/${editingMember._id}`, formData)
-        logger.apiResponse('PUT', `/team/${editingMember._id}`, 200, { message: 'Team member updated' }, Date.now() - startTime)
-        setTeam(team.map(member => 
-          member._id === editingMember._id ? { ...member, ...formData } : member
+        logger.apiRequest('PUT', `/team/${editingMember.id}`, formData)
+        await api.put(`/team/${editingMember.id}`, formData)
+        logger.apiResponse('PUT', `/team/${editingMember.id}`, 200, { message: 'Team member updated' }, Date.now() - startTime)
+        setTeam(team.map(member =>
+          member.id === editingMember.id ? { ...member, ...formData } : member
         ))
       } else {
         logger.apiRequest('POST', '/team', formData)
@@ -90,7 +90,7 @@ const AdminTeam = () => {
       const duration = Date.now() - startTime
       logger.error('Failed to save team member', error, {
         formData,
-        editingMember: editingMember?._id,
+        editingMember: editingMember?.id,
         duration: `${duration}ms`,
         errorMessage: error.message,
         errorResponse: error.response?.data
@@ -131,7 +131,7 @@ const AdminTeam = () => {
         logger.apiRequest('DELETE', `/team/${memberId}`)
         await api.delete(`/team/${memberId}`)
         logger.apiResponse('DELETE', `/team/${memberId}`, 200, { message: 'Team member deleted' }, Date.now() - startTime)
-        setTeam(team.filter(member => member._id !== memberId))
+        setTeam(team.filter(member => member.id !== memberId))
         logger.functionExit('handleDelete', { success: true, duration: `${Date.now() - startTime}ms` })
       } catch (error) {
         const duration = Date.now() - startTime
@@ -233,7 +233,7 @@ const AdminTeam = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {team.map((member, index) => (
               <motion.div
-                key={member._id}
+                key={member.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -278,8 +278,8 @@ const AdminTeam = () => {
                     {/* Bio */}
                     {member.bio && (
                       <p className="text-neutral-600 text-sm mb-4 flex-1">
-                        {member.bio.length > 120 
-                          ? `${member.bio.substring(0, 120)}...` 
+                        {member.bio.length > 120
+                          ? `${member.bio.substring(0, 120)}...`
                           : member.bio}
                       </p>
                     )}
@@ -358,7 +358,7 @@ const AdminTeam = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(member._id)}
+                        onClick={() => handleDelete(member.id)}
                         className="text-red-600 hover:text-red-700 hover:border-red-300"
                       >
                         <Trash2 size={16} />

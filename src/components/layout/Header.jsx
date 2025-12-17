@@ -24,32 +24,32 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 min-w-0 flex-shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-sm">T</span>
             </div>
-            <span className="text-lg sm:text-xl font-heading font-bold gradient-text truncate">Techspert</span>
+            <span className="text-lg sm:text-xl font-heading font-bold text-primary-600 truncate">Techspert</span>
           </Link>
 
-              {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center space-x-2">
-                {navigation.map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                        isActive(item.href)
-                          ? 'text-primary-600 bg-primary-50'
-                          : 'text-neutral-600 hover:text-primary-600 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {Icon && <Icon size={16} />}
-                      <span>{item.name}</span>
-                    </Link>
-                  )
-                })}
-              </nav>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-2">
+            {navigation.map((item) => {
+              const Icon = item.icon
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${isActive(item.href)
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-neutral-600 hover:text-primary-600 hover:bg-neutral-50'
+                    }`}
+                >
+                  {Icon && <Icon size={16} />}
+                  <span>{item.name}</span>
+                </Link>
+              )
+            })}
+          </nav>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center space-x-2">
@@ -80,11 +80,10 @@ const Header = () => {
                       key={item.name}
                       to={item.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${
-                        isActive(item.href)
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-h-[44px] ${isActive(item.href)
                           ? 'text-primary-600 bg-primary-50'
                           : 'text-neutral-600 hover:text-primary-600 hover:bg-neutral-50'
-                      }`}
+                        }`}
                     >
                       {Icon && <Icon size={18} />}
                       <span>{item.name}</span>

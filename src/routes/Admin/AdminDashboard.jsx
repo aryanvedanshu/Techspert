@@ -210,21 +210,49 @@ const AdminDashboard = () => {
                             </div>
                         </Card>
                     </Link>
+
+                    <Link to="/admin/demo-class">
+                        <Card hover>
+                            <div className="p-6">
+                                <GraduationCap className="text-orange-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Demo Classes</h3>
+                                <p className="text-neutral-600 text-sm">Manage demo link & registrations</p>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to="/admin/enquiries">
+                        <Card hover>
+                            <div className="p-6">
+                                <MessageSquare className="text-cyan-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Enquiries</h3>
+                                <p className="text-neutral-600 text-sm">View contact submissions</p>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to="/admin/trainers">
+                        <Card hover>
+                            <div className="p-6">
+                                <UserCheck className="text-indigo-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Trainers</h3>
+                                <p className="text-neutral-600 text-sm">Manage trainer profiles</p>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to="/admin/leads">
+                        <Card hover>
+                            <div className="p-6">
+                                <Target className="text-rose-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Lead Pipeline</h3>
+                                <p className="text-neutral-600 text-sm">Track leads & generate passwords</p>
+                            </div>
+                        </Card>
+                    </Link>
                 </div>
 
-                {/* CRM Access */}
-                <Card>
-                    <div className="p-6">
-                        <h2 className="text-xl font-semibold mb-4">CRM System</h2>
-                        <p className="text-neutral-600 mb-4">Access the Customer Relationship Management system</p>
-                        <Link to="/crm">
-                            <Button>
-                                <Database size={16} className="mr-2" />
-                                Open CRM
-                            </Button>
-                        </Link>
-                    </div>
-                </Card>
+
             </div>
         </div>
     )

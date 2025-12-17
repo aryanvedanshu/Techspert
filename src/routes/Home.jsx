@@ -6,6 +6,7 @@ import {
   Quote, ExternalLink, GraduationCap, Briefcase
 } from 'lucide-react'
 import { api } from '../services/api'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import CourseCard from '../components/CourseCard'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
@@ -16,10 +17,12 @@ import logger from '../utils/logger'
 const Home = () => {
   logger.componentMount('Home')
 
+  // Use realtime site settings from Firestore
+  const { settings: siteSettingsRT, homepage, loading: settingsLoading } = useSiteSettings()
+
   const [courses, setCourses] = useState([])
   const [alumni, setAlumni] = useState([])
   const [projects, setProjects] = useState([])
-  const [siteSettings, setSiteSettings] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showDemoModal, setShowDemoModal] = useState(false)
 
@@ -54,21 +57,13 @@ const Home = () => {
         setCourses(Array.isArray(coursesData) ? coursesData : [])
         setAlumni(Array.isArray(alumniData) ? alumniData : [])
         setProjects(Array.isArray(projectsData) ? projectsData : [])
-        setSiteSettings(settingsData)
+        // Settings now come from useSiteSettings() context
       } catch (error) {
         logger.error('Error fetching homepage data', error)
         setCourses([])
         setAlumni([])
         setProjects([])
-        setSiteSettings({
-          homePage: {
-            hero: {
-              title: 'Master the Future of Technology',
-              subtitle: 'Learn cutting-edge skills from industry experts and build your dream career in tech',
-              ctaText: 'Start Learning Today',
-            }
-          }
-        })
+        // Settings fallback comes from useSiteSettings() context
       } finally {
         setLoading(false)
       }
@@ -97,106 +92,133 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* Hero Section */}
-      <section className="relative min-h-[60vh] sm:min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden">
+      {/* Hero Section - Clean Omnitrix Theme */}
+      <section className="relative min-h-[60vh] sm:min-h-[70vh] md:min-h-[85vh] flex items-center overflow-hidden bg-neutral-900">
+        {/* Subtle Grid Pattern Background */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 opacity-5"
           style={{
-            backgroundImage: `url('data:image/svg+xml;base64,${btoa(`
-              <svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
-                    <stop offset="50%" style="stop-color:#14b8a6;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
-                  </linearGradient>
-                </defs>
-                <rect width="1920" height="1080" fill="url(#grad1)"/>
-              </svg>
-            `)}')`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
           }}
         />
-        <div className="absolute inset-0 bg-black/40"></div>
+
+        {/* Green Accent Line */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-primary-600" />
 
         <div className="container-custom py-12 sm:py-16 md:py-24 lg:py-32 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="max-w-4xl mx-auto text-center lg:text-left lg:max-w-none lg:grid lg:grid-cols-2 lg:gap-16 items-center">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
-              className="text-center lg:text-left"
             >
+              {/* Badge */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium mb-6"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600/20 border border-primary-500/30 text-primary-400 rounded-full text-sm font-medium mb-6"
               >
                 <Sparkle className="w-4 h-4" />
                 <span>New Batch Starting Soon</span>
               </motion.div>
 
+              {/* Heading */}
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-heading font-bold text-white mb-6 leading-tight">
-                {siteSettings?.homePage?.hero?.title || 'Master Modern Technology'}
-                <span className="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent block">Skills Today</span>
+                {homepage?.hero?.title || 'Master the Future of'}
+                <span className="text-primary-400 block">Technology</span>
               </h1>
 
-              <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                {siteSettings?.homePage?.hero?.subtitle || 'Join thousands of students learning cutting-edge technologies with our comprehensive courses, hands-on projects, and industry-recognized certificates.'}
+              {/* Description */}
+              <p className="text-lg sm:text-xl text-neutral-300 mb-8 max-w-2xl">
+                {homepage?.hero?.subtitle || 'Learn cutting-edge skills from industry experts. Join thousands of students building the future with hands-on projects and real-world experience.'}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-10">
                 <Link to="/courses" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto group">
+                  <Button size="lg" className="w-full sm:w-auto group bg-primary-600 hover:bg-primary-500 text-white border-0">
                     <span>Explore Courses</span>
                     <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto group" onClick={() => setShowDemoModal(true)}>
-                  <Play size={20} className="mr-2 group-hover:scale-110 transition-transform" />
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto group border-neutral-600 text-white hover:bg-white/10 hover:border-primary-500"
+                  onClick={() => setShowDemoModal(true)}
+                >
+                  <Play size={20} className="mr-2 group-hover:scale-110 transition-transform text-primary-400" />
                   Watch Demo
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 mt-8 text-sm text-white/80">
+              {/* Stats */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-primary-300" />
-                  <span>10,000+ Students</span>
+                  <CheckCircle2 className="w-5 h-5 text-primary-400" />
+                  <span className="text-white font-medium">10,000+</span>
+                  <span className="text-neutral-400">Students</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Award className="w-5 h-5 text-amber-300" />
-                  <span>4.9/5 Rating</span>
+                  <Award className="w-5 h-5 text-amber-400" />
+                  <span className="text-white font-medium">4.9/5</span>
+                  <span className="text-neutral-400">Rating</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-secondary-300" />
-                  <span>50+ Countries</span>
+                  <Globe className="w-5 h-5 text-primary-400" />
+                  <span className="text-white font-medium">50+</span>
+                  <span className="text-neutral-400">Countries</span>
                 </div>
               </div>
             </motion.div>
 
+            {/* Right Side - Clean Tech Visual */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.7, delay: 0.3 }}
-              className="relative"
+              className="hidden lg:block relative"
             >
-              <div className="aspect-square bg-gradient-to-br from-primary-500 via-secondary-500 to-accent-500 rounded-3xl p-8 sm:p-12 flex items-center justify-center shadow-2xl">
-                <div className="text-white text-center">
-                  <motion.div
-                    animate={{ rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 5, repeat: Infinity }}
-                    className="w-24 h-24 sm:w-32 sm:h-32 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6 backdrop-blur-sm"
-                  >
-                    <Code size={48} className="sm:w-16 sm:h-16" />
-                  </motion.div>
-                  <h3 className="text-2xl sm:text-3xl font-heading font-bold mb-2">Techspert</h3>
-                  <p className="text-white/90 text-sm sm:text-base">Your Gateway to Tech Excellence</p>
+              <div className="relative">
+                {/* Main Card */}
+                <div className="bg-neutral-800 border border-neutral-700 rounded-2xl p-8 shadow-2xl">
+                  {/* Terminal Header */}
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-primary-500" />
+                    <span className="ml-4 text-neutral-400 text-sm font-mono">techspert.dev</span>
+                  </div>
+
+                  {/* Code Content */}
+                  <div className="font-mono text-sm space-y-2">
+                    <p className="text-neutral-400">// Start your journey</p>
+                    <p><span className="text-purple-400">const</span> <span className="text-primary-400">skills</span> = [</p>
+                    <p className="pl-4"><span className="text-yellow-400">"React"</span>,</p>
+                    <p className="pl-4"><span className="text-yellow-400">"Node.js"</span>,</p>
+                    <p className="pl-4"><span className="text-yellow-400">"Python"</span>,</p>
+                    <p className="pl-4"><span className="text-yellow-400">"Data Science"</span></p>
+                    <p>];</p>
+                    <p className="mt-4"><span className="text-purple-400">function</span> <span className="text-primary-400">buildFuture</span>() {"{"}</p>
+                    <p className="pl-4"><span className="text-blue-400">return</span> <span className="text-yellow-400">"success"</span>;</p>
+                    <p>{"}"}</p>
+                  </div>
+                </div>
+
+                {/* Floating Badge */}
+                <div className="absolute -top-4 -right-4 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg">
+                  <span className="flex items-center gap-2">
+                    <Code size={16} />
+                    Learn & Build
+                  </span>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
+
 
       {/* Courses Carousel Section */}
       <section className="py-12 sm:py-16 lg:py-24 bg-white">

@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -14,23 +18,40 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|webp|woff|woff2|ttf|eot)",
+        "source": "**/*.@(js|css)",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=31536000"
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       },
       {
-        "source": "**/*.@(html|json)",
+        "source": "**/*.@(jpg|jpeg|png|gif|webp|svg|ico)",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "no-cache"
+            "value": "public, max-age=604800"
           }
         ]
       }
     ]
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    }
   }
 }

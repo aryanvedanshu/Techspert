@@ -1,0 +1,255 @@
+rules_version = '2';
+
+/**
+ * Firestore Security Rules for Techspert
+ * Simplified rules that work correctly
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =========================================================================
+    // PUBLIC COLLECTIONS - Anyone can read
+    // =========================================================================
+    
+    match /courses/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /projects/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /alumni/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /trainers/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /team/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /banners/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /reviews/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /pages/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /faqs/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /features/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /statistics/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /homepage/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /theme/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /company_info/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /contact_info/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /contactInfo/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /siteSettings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /footer/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /pageContent/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // =========================================================================
+    // CONTACT FORMS - Anyone can create (submit form)
+    // =========================================================================
+    
+    match /messages/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    match /contacts/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    match /demoSignups/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    // =========================================================================
+    // PROTECTED COLLECTIONS - Auth required
+    // =========================================================================
+    
+    match /students/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /enrollments/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+    
+    match /transactions/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /payments/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /coupons/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    match /notifications/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /certificates/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /sessions/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // =========================================================================
+    // ADMIN COLLECTIONS
+    // =========================================================================
+    
+    match /admins/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /users/{docId} {
+      allow read: if request.auth != null || request.auth.uid == docId;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null;
+    }
+    
+    match /audit_logs/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+    
+    // =========================================================================
+    // DEMO CLASS COLLECTIONS (NEW)
+    // =========================================================================
+    
+    match /demo_class_links/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /demo_class_registrations/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    // =========================================================================
+    // LEAD MANAGEMENT COLLECTIONS (NEW)
+    // =========================================================================
+    
+    match /lead_forms/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /lead_sync_results/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // =========================================================================
+    // PER-COURSE DEMO LINKS (NEW)
+    // =========================================================================
+    
+    match /demo_links/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /lead_tracking/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;  // Public can create click events
+      allow update, delete: if request.auth != null;
+    }
+    
+    // =========================================================================
+    // ENQUIRIES COLLECTION (NEW)
+    // =========================================================================
+    
+    match /enquiries/{docId} {
+      allow read: if request.auth != null;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+  }
+}

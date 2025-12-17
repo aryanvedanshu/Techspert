@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Plus, Edit, Trash2, Eye, Search, Filter, Calendar, Users, 
-  Code, Star, Clock, Image, Link, CheckCircle, AlertCircle, 
+import {
+  Plus, Edit, Trash2, Eye, Search, Filter, Calendar, Users,
+  Code, Star, Clock, Image, Link, CheckCircle, AlertCircle,
   Save, X, Upload, ExternalLink, Award, User
 } from 'lucide-react'
 import { api } from '../../services/api'
@@ -47,6 +47,8 @@ const AdminProjectManagement = () => {
     completionDate: '',
     rating: 0
   })
+  // Separate state for technologies input to allow free typing
+  const [technologiesInput, setTechnologiesInput] = useState('')
 
   useEffect(() => {
     logger.componentMount('AdminProjectManagement')
@@ -60,23 +62,23 @@ const AdminProjectManagement = () => {
   const fetchProjects = async () => {
     logger.functionEntry('fetchProjects')
     const startTime = Date.now()
-    
+
     try {
       logger.debug('Starting to fetch projects', { endpoint: '/admin/projects' })
       setLoading(true)
-      
+
       logger.apiRequest('GET', '/admin/projects')
       const response = await api.get('/admin/projects')
-      
+
       const projects = response.data.data || []
       logger.apiResponse('GET', '/admin/projects', response.status, { count: projects.length }, Date.now() - startTime)
-      
-      logger.info('Projects fetched successfully', { 
+
+      logger.info('Projects fetched successfully', {
         count: projects.length,
         total: response.data.total,
         duration: `${Date.now() - startTime}ms`
       })
-      
+
       logger.stateChange('AdminProjectManagement', 'projects', null, projects)
       setProjects(projects)
     } catch (error) {
@@ -175,6 +177,8 @@ const AdminProjectManagement = () => {
         completionDate: project.completionDate || '',
         rating: project.rating || 0
       })
+      // Sync technologies input with formData
+      setTechnologiesInput((project.technologies || []).join(', '))
       setShowModal(true)
       logger.functionExit('handleEdit', { success: true, duration: `${Date.now() - startTime}ms` })
     } catch (error) {
@@ -264,6 +268,8 @@ const AdminProjectManagement = () => {
       completionDate: '',
       rating: 0
     })
+    // Reset technologies input state
+    setTechnologiesInput('')
   }
 
   const addArrayItem = (field, value = '') => {
@@ -289,11 +295,11 @@ const AdminProjectManagement = () => {
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.studentName.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'approved' && project.isApproved) ||
-                         (filterStatus === 'pending' && !project.isApproved)
+      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'approved' && project.isApproved) ||
+      (filterStatus === 'pending' && !project.isApproved)
     const matchesCategory = filterCategory === 'all' || project.category === filterCategory
     return matchesSearch && matchesStatus && matchesCategory
   })
@@ -392,106 +398,106 @@ const AdminProjectManagement = () => {
           {filteredProjects.map((project, index) => {
             const projectId = project.id || project._id
             return (
-            <motion.div
-              key={projectId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <Card className="h-full">
-                <div className="aspect-video bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl mb-4 overflow-hidden">
-                  {project.images && project.images.length > 0 ? (
-                    <img
-                      src={project.images[0]}
-                      alt={project.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Code size={48} className="text-white/80" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-neutral-900 mb-1 line-clamp-2">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-neutral-600 line-clamp-2">
-                      {project.shortDescription || project.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    {project.isApproved ? (
-                      <CheckCircle size={16} className="text-green-500" />
+              <motion.div
+                key={projectId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <Card className="h-full">
+                  <div className="aspect-video bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl mb-4 overflow-hidden">
+                    {project.images && project.images.length > 0 ? (
+                      <img
+                        src={project.images[0]}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <AlertCircle size={16} className="text-yellow-500" />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Code size={48} className="text-white/80" />
+                      </div>
                     )}
-                    {project.isFeatured && (
-                      <Star size={16} className="text-yellow-500 fill-current" />
+                  </div>
+
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-neutral-900 mb-1 line-clamp-2">
+                        {project.title}
+                      </h3>
+                      <p className="text-sm text-neutral-600 line-clamp-2">
+                        {project.shortDescription || project.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                      {project.isApproved ? (
+                        <CheckCircle size={16} className="text-green-500" />
+                      ) : (
+                        <AlertCircle size={16} className="text-yellow-500" />
+                      )}
+                      {project.isFeatured && (
+                        <Star size={16} className="text-yellow-500 fill-current" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(project.difficulty)}`}>
+                      {project.difficulty}
+                    </span>
+                    <div className="flex items-center gap-1 text-sm text-neutral-500">
+                      <Clock size={14} />
+                      <span>{project.duration}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-neutral-500">
+                      <User size={14} />
+                      <span>{project.studentName}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {project.technologies && project.technologies.slice(0, 3).map((tech, index) => (
+                      <span key={index} className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded">
+                        {tech}
+                      </span>
+                    ))}
+                    {project.technologies && project.technologies.length > 3 && (
+                      <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded">
+                        +{project.technologies.length - 3}
+                      </span>
                     )}
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(project.difficulty)}`}>
-                    {project.difficulty}
-                  </span>
-                  <div className="flex items-center gap-1 text-sm text-neutral-500">
-                    <Clock size={14} />
-                    <span>{project.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-neutral-500">
-                    <User size={14} />
-                    <span>{project.studentName}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {project.technologies && project.technologies.slice(0, 3).map((tech, index) => (
-                    <span key={index} className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded">
-                      {tech}
-                    </span>
-                  ))}
-                  {project.technologies && project.technologies.length > 3 && (
-                    <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded">
-                      +{project.technologies.length - 3}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEdit(project)}
-                  >
-                    <Edit size={14} className="mr-1" />
-                    Edit
-                  </Button>
-                  {!project.isApproved && (
+                  <div className="flex gap-2">
                     <Button
+                      variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => handleApprove(projectId)}
+                      onClick={() => handleEdit(project)}
                     >
-                      <CheckCircle size={14} className="mr-1" />
-                      Approve
+                      <Edit size={14} className="mr-1" />
+                      Edit
                     </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(projectId)}
-                    className="text-red-600 hover:text-red-700 hover:border-red-300"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
+                    {!project.isApproved && (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleApprove(projectId)}
+                      >
+                        <CheckCircle size={14} className="mr-1" />
+                        Approve
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(projectId)}
+                      className="text-red-600 hover:text-red-700 hover:border-red-300"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
             )
           })}
         </div>
@@ -534,7 +540,7 @@ const AdminProjectManagement = () => {
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-neutral-900">Basic Information</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Project Title *
@@ -631,7 +637,7 @@ const AdminProjectManagement = () => {
             {/* Student Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-neutral-900">Student Information</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Student Name *
@@ -751,14 +757,25 @@ const AdminProjectManagement = () => {
               </label>
               <input
                 type="text"
-                value={formData.technologies.join(', ')}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  technologies: e.target.value.split(',').map(tech => tech.trim()).filter(tech => tech)
-                }))}
+                value={technologiesInput}
+                onChange={(e) => setTechnologiesInput(e.target.value)}
+                onBlur={() => {
+                  // Parse technologies on blur
+                  const techs = technologiesInput.split(',').map(tech => tech.trim()).filter(tech => tech)
+                  setFormData(prev => ({ ...prev, technologies: techs }))
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    // Parse technologies on Enter
+                    const techs = technologiesInput.split(',').map(tech => tech.trim()).filter(tech => tech)
+                    setFormData(prev => ({ ...prev, technologies: techs }))
+                  }
+                }}
                 className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 placeholder="React, Node.js, MongoDB, Express"
               />
+              <p className="text-xs text-neutral-500 mt-1">Type freely with spaces. Separate technologies with commas.</p>
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Save, Palette, Mail, Globe, Shield, Settings as SettingsIcon, Type, LayoutTemplate } from 'lucide-react'
+import { Save, Palette, Mail, Globe, Shield, Settings as SettingsIcon, Type, LayoutTemplate, Link as LinkIcon } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { api } from '../../services/api'
 import Card from '../../components/UI/Card'
@@ -43,6 +43,13 @@ const AdminSettings = () => {
       enableCertificates: true,
       enableNewsletter: true,
       enableBlog: false,
+    },
+    dynamicLinks: {
+      demoClassLink: '',
+      registrationFormLink: '',
+      whatsappLink: '',
+      youtubeChannelLink: '',
+      brochureLink: '',
     },
   })
   const [loading, setLoading] = useState(true)
@@ -100,7 +107,8 @@ const AdminSettings = () => {
         setSettings(prev => ({
           ...prev,
           ...fetchedSettings,
-          theme: { ...prev.theme, ...fetchedSettings.theme }
+          theme: { ...prev.theme, ...fetchedSettings.theme },
+          dynamicLinks: { ...prev.dynamicLinks, ...fetchedSettings.dynamicLinks }
         }))
 
         logger.functionExit('fetchSettings', { success: true, duration: `${Date.now() - startTime}ms` })
@@ -186,6 +194,7 @@ const AdminSettings = () => {
     { id: 'theme', label: 'Theme', icon: Palette },
     { id: 'contact', label: 'Contact', icon: Mail },
     { id: 'homepage', label: 'Homepage', icon: Globe },
+    { id: 'dynamicLinks', label: 'Dynamic Links', icon: LinkIcon },
     { id: 'features', label: 'Features', icon: Shield },
   ]
 
@@ -236,8 +245,8 @@ const AdminSettings = () => {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-colors duration-200 ${activeTab === tab.id
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-neutral-600 hover:bg-neutral-100'
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-neutral-600 hover:bg-neutral-100'
                         }`}
                     >
                       <Icon size={18} />
@@ -543,6 +552,88 @@ const AdminSettings = () => {
                         onChange={(e) => handleInputChange('homePage.hero', 'ctaText', e.target.value)}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
                       />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === 'dynamicLinks' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-xl font-heading font-semibold text-neutral-900">
+                        Dynamic Links
+                      </h2>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        These links will be displayed across the website and can be updated in real-time.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Demo Class Link (Google Meet / Zoom)
+                        </label>
+                        <input
+                          type="url"
+                          value={settings?.dynamicLinks?.demoClassLink || ''}
+                          onChange={(e) => handleInputChange('dynamicLinks', 'demoClassLink', e.target.value)}
+                          placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
+                        />
+                        <p className="text-xs text-neutral-400 mt-1">Used as fallback when course-specific demo link is not set</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Registration Form Link
+                        </label>
+                        <input
+                          type="url"
+                          value={settings?.dynamicLinks?.registrationFormLink || ''}
+                          onChange={(e) => handleInputChange('dynamicLinks', 'registrationFormLink', e.target.value)}
+                          placeholder="https://forms.google.com/..."
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
+                        />
+                        <p className="text-xs text-neutral-400 mt-1">Link to your registration or enrollment form</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          WhatsApp Contact Link
+                        </label>
+                        <input
+                          type="url"
+                          value={settings?.dynamicLinks?.whatsappLink || ''}
+                          onChange={(e) => handleInputChange('dynamicLinks', 'whatsappLink', e.target.value)}
+                          placeholder="https://wa.me/1234567890"
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          YouTube Channel Link
+                        </label>
+                        <input
+                          type="url"
+                          value={settings?.dynamicLinks?.youtubeChannelLink || ''}
+                          onChange={(e) => handleInputChange('dynamicLinks', 'youtubeChannelLink', e.target.value)}
+                          placeholder="https://youtube.com/@yourchannel"
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Brochure / Syllabus PDF Link
+                        </label>
+                        <input
+                          type="url"
+                          value={settings?.dynamicLinks?.brochureLink || ''}
+                          onChange={(e) => handleInputChange('dynamicLinks', 'brochureLink', e.target.value)}
+                          placeholder="https://drive.google.com/file/..."
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-xl focus:border-primary-300 focus:ring-4 focus:ring-primary-100 transition-all duration-200"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}

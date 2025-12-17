@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, Phone, MapPin, Send, Clock, MessageCircle, HelpCircle, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react'
+import { toast } from 'sonner'
 import { api } from '../services/api'
+import { firebaseService } from '../services/firebaseService'
 import Card from '../components/UI/Card'
 import Button from '../components/UI/Button'
+
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -33,26 +36,26 @@ const Contact = () => {
           api.get('/faqs?featured=true'),
           api.get('/page-content/contact')
         ])
-        
+
         // Handle nested response structure for contact-info
         // Firebase structure: document with nested 'main' object
         let contactData = contactInfoResponse.data?.data?.data || contactInfoResponse.data?.data || null
-        
+
         // If contactData is an array, get the first document
         if (Array.isArray(contactData) && contactData.length > 0) {
           contactData = contactData[0]
         }
-        
+
         // Extract the 'main' object if it exists, otherwise use the data directly
         const mainData = contactData?.main || contactData
-        
+
         console.log('[Contact] Contact data received:', { contactData, mainData })
         setContactInfo(mainData || null)
-        
+
         // Handle nested response structure for faqs
         const faqsData = faqsResponse.data?.data?.data || faqsResponse.data?.data || []
         setFaqs(Array.isArray(faqsData) ? faqsData : [])
-        
+
         // Handle nested response structure for page-content
         const pageData = pageContentResponse.data?.data?.data || pageContentResponse.data?.data || null
         setPageContent(pageData)
@@ -71,14 +74,32 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
-    // Simulate form submission
-    setTimeout(() => {
-      alert('Thank you for your message! We\'ll get back to you soon.')
-      setFormData({ name: '', email: '', subject: '', message: '' })
+
+    try {
+      // Save enquiry to Firestore
+      const enquiryData = {
+        ...formData,
+        status: 'new',
+        createdAt: new Date().toISOString(),
+        source: 'contact_form'
+      }
+
+      const result = await firebaseService.createDocument('enquiries', enquiryData)
+
+      if (result.success) {
+        toast.success('Thank you for your message! We\'ll get back to you soon.')
+        setFormData({ name: '', email: '', subject: '', message: '' })
+      } else {
+        throw new Error('Failed to submit enquiry')
+      }
+    } catch (error) {
+      console.error('Error submitting enquiry:', error)
+      toast.error('Failed to submit your message. Please try again.')
+    } finally {
       setIsSubmitting(false)
-    }, 1000)
+    }
   }
+
 
   // Dynamic icon mapping
   const getIconComponent = (iconName) => {
@@ -131,164 +152,164 @@ const Contact = () => {
           {contactInfo ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Address */}
-              {contactInfo.address && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0 }}
-                >
-                  <Card className="text-center h-full">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <MapPin size={24} className="text-white" />
-                    </div>
-                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
-                      Address
-                    </h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      {contactInfo.address}
-                    </p>
-                  </Card>
-                </motion.div>
-              )}
+                {/* Address */}
+                {contactInfo.address && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0 }}
+                  >
+                    <Card className="text-center h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <MapPin size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
+                        Address
+                      </h3>
+                      <p className="text-neutral-600 leading-relaxed">
+                        {contactInfo.address}
+                      </p>
+                    </Card>
+                  </motion.div>
+                )}
 
-              {/* Phone */}
-              {contactInfo.phone && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                >
-                  <Card className="text-center h-full">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Phone size={24} className="text-white" />
-                    </div>
-                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
-                      Phone
-                    </h3>
-                    <a
-                      href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, '')}`}
-                      className="text-primary-600 hover:text-primary-700 font-medium text-lg block"
-                    >
-                      {contactInfo.phone}
-                    </a>
-                  </Card>
-                </motion.div>
-              )}
-
-              {/* Email */}
-              {contactInfo.email && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                >
-                  <Card className="text-center h-full">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Mail size={24} className="text-white" />
-                    </div>
-                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
-                      Email
-                    </h3>
-                    <a
-                      href={`mailto:${contactInfo.email}`}
-                      className="text-primary-600 hover:text-primary-700 font-medium text-lg block break-all"
-                    >
-                      {contactInfo.email}
-                    </a>
-                    {contactInfo.socialLinks?.supportEmail && contactInfo.socialLinks.supportEmail !== contactInfo.email && (
+                {/* Phone */}
+                {contactInfo.phone && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    <Card className="text-center h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Phone size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
+                        Phone
+                      </h3>
                       <a
-                        href={`mailto:${contactInfo.socialLinks.supportEmail}`}
-                        className="text-neutral-600 hover:text-primary-600 text-sm block mt-2 break-all"
+                        href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, '')}`}
+                        className="text-primary-600 hover:text-primary-700 font-medium text-lg block"
                       >
-                        {contactInfo.socialLinks.supportEmail}
+                        {contactInfo.phone}
+                      </a>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Email */}
+                {contactInfo.email && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                  >
+                    <Card className="text-center h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Mail size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
+                        Email
+                      </h3>
+                      <a
+                        href={`mailto:${contactInfo.email}`}
+                        className="text-primary-600 hover:text-primary-700 font-medium text-lg block break-all"
+                      >
+                        {contactInfo.email}
+                      </a>
+                      {contactInfo.socialLinks?.supportEmail && contactInfo.socialLinks.supportEmail !== contactInfo.email && (
+                        <a
+                          href={`mailto:${contactInfo.socialLinks.supportEmail}`}
+                          className="text-neutral-600 hover:text-primary-600 text-sm block mt-2 break-all"
+                        >
+                          {contactInfo.socialLinks.supportEmail}
+                        </a>
+                      )}
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Office Hours */}
+                {contactInfo.officeHours && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
+                  >
+                    <Card className="text-center h-full">
+                      <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Clock size={24} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
+                        Office Hours
+                      </h3>
+                      <p className="text-neutral-600 leading-relaxed">
+                        {contactInfo.officeHours}
+                      </p>
+                    </Card>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Social Links */}
+              {contactInfo.socialLinks && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                  className="mt-12 text-center"
+                >
+                  <h3 className="text-2xl font-heading font-semibold text-neutral-900 mb-6">
+                    Connect With Us
+                  </h3>
+                  <div className="flex justify-center items-center gap-4 flex-wrap">
+                    {contactInfo.socialLinks.facebook && (
+                      <a
+                        href={contactInfo.socialLinks.facebook}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
+                        aria-label="Facebook"
+                      >
+                        <Facebook size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
                       </a>
                     )}
-                  </Card>
+                    {contactInfo.socialLinks.twitter && (
+                      <a
+                        href={contactInfo.socialLinks.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
+                        aria-label="Twitter"
+                      >
+                        <Twitter size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
+                      </a>
+                    )}
+                    {contactInfo.socialLinks.linkedin && (
+                      <a
+                        href={contactInfo.socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
+                        aria-label="LinkedIn"
+                      >
+                        <Linkedin size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
+                      </a>
+                    )}
+                    {contactInfo.socialLinks.instagram && (
+                      <a
+                        href={contactInfo.socialLinks.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
+                        aria-label="Instagram"
+                      >
+                        <Instagram size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
+                      </a>
+                    )}
+                  </div>
                 </motion.div>
               )}
-
-              {/* Office Hours */}
-              {contactInfo.officeHours && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.3 }}
-                >
-                  <Card className="text-center h-full">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Clock size={24} className="text-white" />
-                    </div>
-                    <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-3">
-                      Office Hours
-                    </h3>
-                    <p className="text-neutral-600 leading-relaxed">
-                      {contactInfo.officeHours}
-                    </p>
-                  </Card>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Social Links */}
-            {contactInfo.socialLinks && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.4 }}
-                className="mt-12 text-center"
-              >
-                <h3 className="text-2xl font-heading font-semibold text-neutral-900 mb-6">
-                  Connect With Us
-                </h3>
-                <div className="flex justify-center items-center gap-4 flex-wrap">
-                  {contactInfo.socialLinks.facebook && (
-                    <a
-                      href={contactInfo.socialLinks.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
-                      aria-label="Facebook"
-                    >
-                      <Facebook size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    </a>
-                  )}
-                  {contactInfo.socialLinks.twitter && (
-                    <a
-                      href={contactInfo.socialLinks.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
-                      aria-label="Twitter"
-                    >
-                      <Twitter size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    </a>
-                  )}
-                  {contactInfo.socialLinks.linkedin && (
-                    <a
-                      href={contactInfo.socialLinks.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
-                      aria-label="LinkedIn"
-                    >
-                      <Linkedin size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    </a>
-                  )}
-                  {contactInfo.socialLinks.instagram && (
-                    <a
-                      href={contactInfo.socialLinks.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-12 h-12 bg-neutral-800 hover:bg-primary-600 rounded-xl flex items-center justify-center transition-all duration-200 group"
-                      aria-label="Instagram"
-                    >
-                      <Instagram size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                    </a>
-                  )}
-                </div>
-              </motion.div>
-            )}
             </>
           ) : (
             <div className="text-center py-12">

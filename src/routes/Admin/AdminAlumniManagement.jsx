@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Plus, Edit, Trash2, Eye, Search, Filter, Calendar, Users, 
+import {
+  Plus, Edit, Trash2, Eye, Search, Filter, Calendar, Users,
   Award, Star, Briefcase, GraduationCap, MapPin, Mail,
   CheckCircle, AlertCircle, Save, X, Upload, ExternalLink,
   Linkedin, Github, Twitter, Globe, Phone, User
@@ -82,13 +82,13 @@ const AdminAlumniManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    logger.functionEntry('handleSubmit', { editingAlumni: editingAlumni?._id })
+    logger.functionEntry('handleSubmit', { editingAlumni: editingAlumni?.id })
     const startTime = Date.now()
     try {
       if (editingAlumni) {
-        logger.apiRequest('PUT', `/admin/alumni/${editingAlumni._id}`, formData)
-        await api.put(`/admin/alumni/${editingAlumni._id}`, formData)
-        logger.apiResponse('PUT', `/admin/alumni/${editingAlumni._id}`, 200, { message: 'Alumni updated' }, Date.now() - startTime)
+        logger.apiRequest('PUT', `/admin/alumni/${editingAlumni.id}`, formData)
+        await api.put(`/admin/alumni/${editingAlumni.id}`, formData)
+        logger.apiResponse('PUT', `/admin/alumni/${editingAlumni.id}`, 200, { message: 'Alumni updated' }, Date.now() - startTime)
         toast.success('Alumni profile updated successfully')
       } else {
         logger.apiRequest('POST', '/admin/alumni', formData)
@@ -105,7 +105,7 @@ const AdminAlumniManagement = () => {
       const duration = Date.now() - startTime
       logger.error('Failed to save alumni', error, {
         formData,
-        editingAlumni: editingAlumni?._id,
+        editingAlumni: editingAlumni?.id,
         duration: `${duration}ms`,
         errorMessage: error.message,
         errorResponse: error.response?.data
@@ -227,11 +227,11 @@ const AdminAlumniManagement = () => {
 
   const filteredAlumni = alumni.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.currentPosition.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || 
-                         (filterStatus === 'featured' && member.isFeatured) ||
-                         (filterStatus === 'active' && member.isActive)
+      member.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.currentPosition.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' ||
+      (filterStatus === 'featured' && member.isFeatured) ||
+      (filterStatus === 'active' && member.isActive)
     const matchesCompany = filterCompany === 'all' || member.company === filterCompany
     return matchesSearch && matchesStatus && matchesCompany
   })
@@ -330,7 +330,7 @@ const AdminAlumniManagement = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAlumni.map((member, index) => (
             <motion.div
-              key={member._id}
+              key={member.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -410,7 +410,7 @@ const AdminAlumniManagement = () => {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => window.open(`/alumni/${member._id}`, '_blank')}
+                    onClick={() => window.open(`/alumni/${member.id}`, '_blank')}
                   >
                     <Eye size={14} className="mr-1" />
                     View
@@ -418,7 +418,7 @@ const AdminAlumniManagement = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(member._id)}
+                    onClick={() => handleDelete(member.id)}
                     className="text-red-600 hover:text-red-700 hover:border-red-300"
                   >
                     <Trash2 size={14} />
@@ -467,7 +467,7 @@ const AdminAlumniManagement = () => {
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-neutral-900">Basic Information</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Full Name *
@@ -542,7 +542,7 @@ const AdminAlumniManagement = () => {
             {/* Professional Information */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-neutral-900">Professional Information</h3>
-              
+
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Current Position *
@@ -616,7 +616,7 @@ const AdminAlumniManagement = () => {
           {/* Bio and Testimonial */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-neutral-900">Bio & Testimonial</h3>
-            
+
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Bio
@@ -654,8 +654,8 @@ const AdminAlumniManagement = () => {
               <input
                 type="text"
                 value={formData.skills.join(', ')}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
                   skills: e.target.value.split(',').map(skill => skill.trim()).filter(skill => skill)
                 }))}
                 className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -707,8 +707,8 @@ const AdminAlumniManagement = () => {
                 <input
                   type="url"
                   value={formData.socialLinks.linkedin}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
                     socialLinks: { ...prev.socialLinks, linkedin: e.target.value }
                   }))}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -722,8 +722,8 @@ const AdminAlumniManagement = () => {
                 <input
                   type="url"
                   value={formData.socialLinks.github}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
                     socialLinks: { ...prev.socialLinks, github: e.target.value }
                   }))}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -737,8 +737,8 @@ const AdminAlumniManagement = () => {
                 <input
                   type="url"
                   value={formData.socialLinks.twitter}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
                     socialLinks: { ...prev.socialLinks, twitter: e.target.value }
                   }))}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -752,8 +752,8 @@ const AdminAlumniManagement = () => {
                 <input
                   type="url"
                   value={formData.socialLinks.website}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
                     socialLinks: { ...prev.socialLinks, website: e.target.value }
                   }))}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -766,7 +766,7 @@ const AdminAlumniManagement = () => {
           {/* Media and Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-neutral-900">Media & Settings</h3>
-            
+
             <div>
               <FileUpload
                 label="Profile Image"

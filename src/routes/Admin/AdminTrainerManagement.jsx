@@ -68,9 +68,9 @@ const AdminTrainerManagement = () => {
     const startTime = Date.now()
     try {
       if (editingTrainer) {
-        logger.apiRequest('PUT', `/trainers/${editingTrainer._id}`, formData)
-        await api.put(`/trainers/${editingTrainer._id}`, formData)
-        logger.apiResponse('PUT', `/trainers/${editingTrainer._id}`, 200, {}, Date.now() - startTime)
+        logger.apiRequest('PUT', `/trainers/${editingTrainer.id}`, formData)
+        await api.put(`/trainers/${editingTrainer.id}`, formData)
+        logger.apiResponse('PUT', `/trainers/${editingTrainer.id}`, 200, {}, Date.now() - startTime)
         toast.success('Trainer updated successfully')
       } else {
         logger.apiRequest('POST', '/trainers', formData)
@@ -92,7 +92,7 @@ const AdminTrainerManagement = () => {
   }
 
   const handleEdit = (trainer) => {
-    logger.functionEntry('handleEdit', { trainerId: trainer._id })
+    logger.functionEntry('handleEdit', { trainerId: trainer.id })
     setEditingTrainer(trainer)
     setFormData({
       name: trainer.name || '',
@@ -220,7 +220,7 @@ const AdminTrainerManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {trainers.map((trainer, index) => (
               <motion.div
-                key={trainer._id}
+                key={trainer.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -289,7 +289,7 @@ const AdminTrainerManagement = () => {
                       <Button variant="secondary" size="sm" onClick={() => handleEdit(trainer)}>
                         <Edit size={16} />
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDelete(trainer._id)}>
+                      <Button variant="danger" size="sm" onClick={() => handleDelete(trainer.id)}>
                         <Trash2 size={16} />
                       </Button>
                     </div>

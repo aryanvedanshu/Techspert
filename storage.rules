@@ -1,0 +1,174 @@
+rules_version = '2';
+
+/**
+ * Firebase Storage Security Rules for Techspert Admin Panel
+ * 
+ * Storage Structure:
+ * - courses/{courseId}/*          Course thumbnails and materials
+ * - projects/{projectId}/*        Project screenshots and files
+ * - alumni/{alumniId}/*           Alumni photos
+ * - trainers/{trainerId}/*        Trainer photos
+ * - team/{memberId}/*             Team member photos
+ * - banners/{bannerId}/*          Banner images
+ * - site/logo/*                   Site logo
+ * - site/favicon/*                Site favicon
+ * - site/assets/*                 Other site assets
+ * 
+ * Size Limits:
+ * - Images: 5MB max
+ * - Documents: 10MB max
+ */
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is in admins collection (requires Firestore lookup)
+    // Note: Storage rules cannot directly query Firestore, so we use custom claims
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.admin == true;
+    }
+    
+    // Check if user is super-admin
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.role == 'super-admin';
+    }
+    
+    // Check file size (in bytes)
+    function isValidImageSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB
+    }
+    
+    function isValidDocumentSize() {
+      return request.resource.size < 10 * 1024 * 1024; // 10MB
+    }
+    
+    // Check if file is an image
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // Check if file is a document
+    function isDocument() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*');
+    }
+    
+    // =========================================================================
+    // COURSE ASSETS
+    // =========================================================================
+    
+    match /courses/{courseId}/{allPaths=**} {
+      // Public read for published courses
+      allow read: if true;
+      
+      // Admin write with size and type validation
+      allow create: if isAuthenticated() && isImage() && isValidImageSize();
+      allow update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // PROJECT ASSETS
+    // =========================================================================
+    
+    match /projects/{projectId}/{allPaths=**} {
+      // Public read
+      allow read: if true;
+      
+      // Authenticated users can upload to their own projects
+      allow create: if isAuthenticated() && isImage() && isValidImageSize();
+      allow update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // ALUMNI PHOTOS
+    // =========================================================================
+    
+    match /alumni/{alumniId}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // TRAINER PHOTOS
+    // =========================================================================
+    
+    match /trainers/{trainerId}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // TEAM PHOTOS
+    // =========================================================================
+    
+    match /team/{memberId}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // BANNER IMAGES
+    // =========================================================================
+    
+    match /banners/{bannerId}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // SITE ASSETS (Logo, Favicon, etc.)
+    // =========================================================================
+    
+    match /site/{assetType}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && isImage() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+    
+    // =========================================================================
+    // STUDENT UPLOADS (Profile pictures, certificates)
+    // =========================================================================
+    
+    match /students/{studentId}/{allPaths=**} {
+      // Students can read their own files, admins can read all
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == studentId || request.auth.token.admin == true);
+      
+      // Students can upload their own files
+      allow create, update: if isAuthenticated() && 
+                              request.auth.uid == studentId && 
+                              isImage() && 
+                              isValidImageSize();
+      
+      // Only the owner or admin can delete
+      allow delete: if isAuthenticated() && 
+                      (request.auth.uid == studentId || request.auth.token.admin == true);
+    }
+    
+    // =========================================================================
+    // CATCH-ALL (Deny everything else)
+    // =========================================================================
+    
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { api } from '../../services/api'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ import logger from '../../utils/logger'
 const AdminLogin = () => {
   const [searchParams] = useSearchParams()
   const resetToken = searchParams.get('token')
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,7 +30,7 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false)
   const [isResetPasswordLoading, setIsResetPasswordLoading] = useState(false)
-  
+
   const { login, isAuthenticated } = useAuth()
 
   // Check if we have a reset token in URL
@@ -54,18 +54,22 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log('DEBUG: handleSubmit called', { email: formData.email, password: formData.password })
     setIsLoading(true)
     setError('')
 
     try {
       const result = await login(formData.email, formData.password, true) // true for admin login
-      
+
       if (result.success) {
         // Redirect will happen automatically due to isAuthenticated check
+        console.log('DEBUG: login success')
       } else {
+        console.log('DEBUG: login failed', result.error)
         setError(result.error)
       }
     } catch (error) {
+      console.error('DEBUG: login exception', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -82,14 +86,14 @@ const AdminLogin = () => {
       logger.apiRequest('POST', '/admin/forgot-password', { email: forgotPasswordEmail })
       const response = await api.post('/admin/forgot-password', { email: forgotPasswordEmail })
       logger.apiResponse('POST', '/admin/forgot-password', response.status, response.data, Date.now())
-      
+
       toast.success(response.data.message || 'Password reset link sent!')
-      
+
       // In development, show the token
       if (response.data.data?.resetToken) {
         toast.info(`Reset Token (Dev Only): ${response.data.data.resetToken}`, { duration: 10000 })
       }
-      
+
       setShowForgotPasswordModal(false)
       setForgotPasswordEmail('')
       logger.functionExit('handleForgotPassword', { success: true })
@@ -108,7 +112,7 @@ const AdminLogin = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault()
     logger.functionEntry('handleResetPassword', { hasToken: !!resetToken })
-    
+
     if (resetPasswordData.password !== resetPasswordData.confirmPassword) {
       setError('Passwords do not match')
       return
@@ -129,7 +133,7 @@ const AdminLogin = () => {
         password: resetPasswordData.password,
       })
       logger.apiResponse('POST', '/admin/reset-password', response.status, response.data, Date.now())
-      
+
       toast.success('Password reset successfully! Please login with your new password.')
       setShowResetPassword(false)
       setResetPasswordData({ password: '', confirmPassword: '' })

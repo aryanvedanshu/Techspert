@@ -1,13 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, Clock, Users, ExternalLink, CheckCircle, Mail, Phone, User } from 'lucide-react'
+import { X, Calendar, Clock, Users, ExternalLink, CheckCircle, Mail, Phone, User, Video } from 'lucide-react'
 import { toast } from 'sonner'
+import { doc, onSnapshot, collection, getDocs } from 'firebase/firestore'
+import { db } from '../config/firebase'
 import { api } from '../services/api'
+import { trackClick } from '../services/leadTrackingService'
+import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import Button from './UI/Button'
 import Card from './UI/Card'
 import logger from '../utils/logger'
 
+
 const FreeDemoModal = ({ isOpen, onClose }) => {
+  const { dynamicLinks } = useSiteSettings()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,6 +22,77 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
     experience: 'beginner'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [courses, setCourses] = useState([])
+  const [demoLink, setDemoLink] = useState('')
+  const [selectedCourse, setSelectedCourse] = useState('')
+
+  // Fetch courses on mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const coursesRef = collection(db, 'courses')
+        const snapshot = await getDocs(coursesRef)
+        const courseList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        setCourses(courseList)
+        if (courseList.length > 0) {
+          setSelectedCourse(courseList[0].id)
+        }
+      } catch (error) {
+        logger.error('Failed to fetch courses', error)
+      }
+    }
+    if (isOpen) {
+      fetchCourses()
+    }
+  }, [isOpen])
+
+  // Listen for demo link changes when course is selected
+  useEffect(() => {
+    if (!selectedCourse) return
+
+    logger.info('FreeDemoModal: Listening for demo link', { courseId: selectedCourse })
+    const demoLinkRef = doc(db, 'demo_links', selectedCourse)
+
+    const unsubscribe = onSnapshot(
+      demoLinkRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data()
+          setDemoLink(data.demoMeetLink || '')
+          logger.info('FreeDemoModal: Demo link updated', { link: data.demoMeetLink })
+        } else {
+          setDemoLink('')
+          logger.warn('FreeDemoModal: No demo link found for course', { courseId: selectedCourse })
+        }
+      },
+      (error) => {
+        logger.error('FreeDemoModal: Error listening to demo link', error)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [selectedCourse])
+
+  const handleCourseChange = (e) => {
+    const courseId = e.target.value
+    setSelectedCourse(courseId)
+    setFormData(prev => ({ ...prev, courseInterest: courseId }))
+  }
+
+  // Get the effective demo link - course-specific or global fallback
+  const effectiveDemoLink = demoLink || dynamicLinks?.demoClassLink || ''
+
+  const handleJoinDemo = async () => {
+    if (!effectiveDemoLink) {
+      toast.error('Demo link not available. Please register below to be notified.')
+      return
+    }
+    // Track the click
+    await trackClick(selectedCourse, 'demo_modal')
+    // Open the link
+    window.open(effectiveDemoLink, '_blank')
+  }
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,18 +102,15 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
 
     try {
       logger.apiRequest('POST', '/demo-signups', formData)
-      const response = await api.post('/demo-signups', formData)
-      logger.apiResponse('POST', '/demo-signups', response.status, { signupId: response.data.data?._id }, Date.now() - startTime)
-      
-      logger.success('Demo registration successful', {
-        signupId: response.data.data?._id,
-        duration: `${Date.now() - startTime}ms`
+      const response = await api.post('/demo-signups', {
+        ...formData,
+        courseInterest: selectedCourse,
       })
-      logger.functionExit('handleSubmit', { success: true, duration: `${Date.now() - startTime}ms` })
-      
-      toast.success('Demo registration successful! Check your email for the Google Meet link.')
+      logger.apiResponse('POST', '/demo-signups', response.status, { signupId: response.data.data?.id }, Date.now() - startTime)
+
+      toast.success('Demo registration successful! Check your email for the meeting link.')
       onClose()
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -46,14 +120,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
         experience: 'beginner'
       })
     } catch (error) {
-      const duration = Date.now() - startTime
-      logger.error('Failed to register for demo', error, {
-        formData,
-        duration: `${duration}ms`,
-        errorMessage: error.message,
-        errorResponse: error.response?.data
-      })
-      logger.functionExit('handleSubmit', { success: false, error: error.message, duration: `${duration}ms` })
+      logger.error('Failed to register for demo', error)
       toast.error(error.response?.data?.message || 'Failed to register for demo. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -68,20 +135,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
     }))
   }
 
-  const demoDetails = {
-    title: 'Free Live Demo Session',
-    date: 'Every Saturday',
-    time: '2:00 PM - 3:00 PM IST',
-    duration: '1 Hour',
-    maxParticipants: 20,
-    googleMeetLink: 'https://meet.google.com/abc-defg-hij', // This would come from admin panel
-    topics: [
-      'Introduction to Modern Web Development',
-      'Live Coding Session',
-      'Q&A with Industry Experts',
-      'Career Guidance'
-    ]
-  }
+  const selectedCourseData = courses.find(c => c.id === selectedCourse) || {}
 
   return (
     <AnimatePresence>
@@ -108,7 +162,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-between p-6 border-b border-neutral-200">
                 <div>
                   <h2 className="text-2xl font-heading font-bold text-neutral-900">
-                    {demoDetails.title}
+                    Free Live Demo Session
                   </h2>
                   <p className="text-neutral-600 mt-1">
                     Join our free live session and experience our teaching style
@@ -126,18 +180,36 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Demo Information */}
                   <div className="space-y-6">
+                    {/* Course Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Select Course
+                      </label>
+                      <select
+                        value={selectedCourse}
+                        onChange={handleCourseChange}
+                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      >
+                        {courses.map(course => (
+                          <option key={course.id} value={course.id}>
+                            {course.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div>
                       <h3 className="text-lg font-heading font-semibold text-neutral-900 mb-4">
                         Session Details
                       </h3>
-                      
+
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
                             <Calendar size={20} className="text-primary-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-neutral-900">{demoDetails.date}</p>
+                            <p className="font-medium text-neutral-900">Every Saturday</p>
                             <p className="text-sm text-neutral-600">Weekly sessions</p>
                           </div>
                         </div>
@@ -147,8 +219,8 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                             <Clock size={20} className="text-green-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-neutral-900">{demoDetails.time}</p>
-                            <p className="text-sm text-neutral-600">Duration: {demoDetails.duration}</p>
+                            <p className="font-medium text-neutral-900">2:00 PM - 3:00 PM IST</p>
+                            <p className="text-sm text-neutral-600">Duration: 1 Hour</p>
                           </div>
                         </div>
 
@@ -157,41 +229,35 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                             <Users size={20} className="text-blue-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-neutral-900">Max {demoDetails.maxParticipants} participants</p>
+                            <p className="font-medium text-neutral-900">Max 20 participants</p>
                             <p className="text-sm text-neutral-600">Interactive session</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div>
-                      <h4 className="font-medium text-neutral-900 mb-3">What You'll Learn:</h4>
-                      <ul className="space-y-2">
-                        {demoDetails.topics.map((topic, index) => (
-                          <li key={index} className="flex items-center gap-2">
-                            <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                            <span className="text-sm text-neutral-600">{topic}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {/* Join Demo Button */}
+                    <div className="bg-primary-50 rounded-lg p-4">
 
-                    <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg p-4">
                       <div className="flex items-center gap-3 mb-3">
-                        <ExternalLink size={20} className="text-primary-600" />
-                        <span className="font-medium text-neutral-900">Google Meet Link</span>
+                        <Video size={20} className="text-primary-600" />
+                        <span className="font-medium text-neutral-900">Join Demo Session</span>
                       </div>
-                      <p className="text-sm text-neutral-600 mb-2">
-                        You'll receive the meeting link via email after registration
-                      </p>
-                      <a
-                        href={demoDetails.googleMeetLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 hover:text-primary-700 font-medium text-sm"
-                      >
-                        {demoDetails.googleMeetLink}
-                      </a>
+                      {effectiveDemoLink ? (
+                        <>
+                          <p className="text-sm text-neutral-600 mb-3">
+                            Demo for: <strong>{selectedCourseData.title || 'Selected Course'}</strong>
+                          </p>
+                          <Button onClick={handleJoinDemo} className="w-full">
+                            <ExternalLink size={16} className="mr-2" />
+                            Join Google Meet
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-sm text-neutral-500">
+                          Demo link not available. Register below to be notified.
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -200,7 +266,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                     <h3 className="text-lg font-heading font-semibold text-neutral-900 mb-4">
                       Register for Free Demo
                     </h3>
-                    
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -214,7 +280,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                             required
                             value={formData.name}
                             onChange={handleInputChange}
-                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
                             placeholder="Enter your full name"
                           />
                         </div>
@@ -232,7 +298,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                             required
                             value={formData.email}
                             onChange={handleInputChange}
-                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
                             placeholder="Enter your email address"
                           />
                         </div>
@@ -249,30 +315,10 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                             name="phone"
                             value={formData.phone}
                             onChange={handleInputChange}
-                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
                             placeholder="Enter your phone number"
                           />
                         </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Course Interest
-                        </label>
-                        <select
-                          name="courseInterest"
-                          value={formData.courseInterest}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        >
-                          <option value="">Select a course</option>
-                          <option value="mern-stack">MERN Stack Development</option>
-                          <option value="ai-ml">AI & Machine Learning</option>
-                          <option value="data-science">Data Science with Python</option>
-                          <option value="cloud-computing">Cloud Computing with AWS</option>
-                          <option value="mobile-development">Mobile App Development</option>
-                          <option value="not-sure">Not sure yet</option>
-                        </select>
                       </div>
 
                       <div>
@@ -283,7 +329,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                           name="experience"
                           value={formData.experience}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
                         >
                           <option value="beginner">Beginner</option>
                           <option value="intermediate">Intermediate</option>
@@ -310,7 +356,7 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
                       </div>
 
                       <p className="text-xs text-neutral-500 text-center">
-                        By registering, you agree to receive emails about our courses and demo sessions.
+                        By registering, you agree to receive emails about our courses.
                       </p>
                     </form>
                   </div>
@@ -325,4 +371,3 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
 }
 
 export default FreeDemoModal
-

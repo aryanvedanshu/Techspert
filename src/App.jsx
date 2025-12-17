@@ -2,6 +2,8 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { SiteSettingsProvider } from './contexts/SiteSettingsContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/layout/Header'
 import Footer from './components/layout/Footer'
@@ -31,8 +33,11 @@ import AdminTrainerManagement from './routes/Admin/AdminTrainerManagement'
 import AdminAdminManagement from './routes/Admin/AdminAdminManagement'
 import AdminMessagingCenter from './routes/Admin/AdminMessagingCenter'
 import AdminPageManagement from './routes/Admin/AdminPageManagement'
+import AdminSetup from './routes/Admin/AdminSetup'
 import PageTemplate from './routes/PageTemplate'
-import CrmApp from './apps/crm/CrmApp'
+import AdminDemoClassManagement from './routes/Admin/AdminDemoClassManagement'
+import AdminEnquiriesManagement from './routes/Admin/AdminEnquiriesManagement'
+import AdminLeadsOverview from './routes/Admin/AdminLeadsOverview'
 
 function App() {
   const location = useLocation()
@@ -44,54 +49,59 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <div className="min-h-screen bg-white">
-          <Header />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/courses/:id" element={<CourseDetail />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/certificates" element={<Certificates />} />
-              <Route path="/alumni" element={<Alumni />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/courses" element={<AdminCourses />} />
-              <Route path="/admin/projects" element={<AdminProjects />} />
-              <Route path="/admin/alumni" element={<AdminAlumni />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
-              <Route path="/admin/team" element={<AdminTeam />} />
-              <Route path="/admin/features" element={<AdminFeatures />} />
-              <Route path="/admin/statistics" element={<AdminStatistics />} />
-              <Route path="/admin/faqs" element={<AdminFAQs />} />
-              <Route path="/admin/contact-info" element={<AdminContactInfo />} />
-              <Route path="/admin/analytics" element={<AdminAnalytics />} />
-              <Route path="/admin/users" element={<AdminUserManagement />} />
-              <Route path="/admin/content" element={<AdminContentManagement />} />
-              <Route path="/admin/trainers" element={<AdminTrainerManagement />} />
-              <Route path="/admin/admins" element={<AdminAdminManagement />} />
-              <Route path="/admin/messaging" element={<AdminMessagingCenter />} />
-              <Route path="/admin/pages" element={<AdminPageManagement />} />
+      <ThemeProvider>
+        <SiteSettingsProvider>
+          <AuthProvider>
+            <div className="min-h-screen bg-white">
+              <Header />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses/:id" element={<CourseDetail />} />
+                  <Route path="/projects" element={<Projects />} />
+                  <Route path="/certificates" element={<Certificates />} />
+                  <Route path="/alumni" element={<Alumni />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/setup" element={<AdminSetup />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/courses" element={<AdminCourses />} />
+                  <Route path="/admin/projects" element={<AdminProjects />} />
+                  <Route path="/admin/alumni" element={<AdminAlumni />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route path="/admin/team" element={<AdminTeam />} />
+                  <Route path="/admin/features" element={<AdminFeatures />} />
+                  <Route path="/admin/statistics" element={<AdminStatistics />} />
+                  <Route path="/admin/faqs" element={<AdminFAQs />} />
+                  <Route path="/admin/contact-info" element={<AdminContactInfo />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/admin/users" element={<AdminUserManagement />} />
+                  <Route path="/admin/content" element={<AdminContentManagement />} />
+                  <Route path="/admin/trainers" element={<AdminTrainerManagement />} />
+                  <Route path="/admin/admins" element={<AdminAdminManagement />} />
+                  <Route path="/admin/messaging" element={<AdminMessagingCenter />} />
+                  <Route path="/admin/pages" element={<AdminPageManagement />} />
+                  <Route path="/admin/demo-class" element={<AdminDemoClassManagement />} />
+                  <Route path="/admin/enquiries" element={<AdminEnquiriesManagement />} />
+                  <Route path="/admin/leads" element={<AdminLeadsOverview />} />
 
-              {/* CRM Microapp Routes */}
-              <Route path="/crm/*" element={<CrmApp />} />
-
-              {/* Dynamic Page Route - Must be last */}
-              <Route path="/:slug" element={<PageTemplate />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-        <Toaster
-          position="top-right"
-          expand={true}
-          richColors={true}
-          closeButton={true}
-        />
-      </AuthProvider>
+                  {/* Dynamic Page Route - Must be last */}
+                  <Route path="/:slug" element={<PageTemplate />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+            <Toaster
+              position="top-right"
+              expand={true}
+              richColors={true}
+              closeButton={true}
+            />
+          </AuthProvider>
+        </SiteSettingsProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   )
 }
