@@ -7,8 +7,8 @@ import Button from '../components/UI/Button'
 
 const About = () => {
   console.log("[DEBUG: About.jsx:component:8] About component initializing")
-  
-  const [team, setTeam] = useState([])
+
+  const [trainers, setTrainers] = useState([])
   const [features, setFeatures] = useState([])
   const [statistics, setStatistics] = useState([])
   const [pageContent, setPageContent] = useState(null)
@@ -20,21 +20,21 @@ const About = () => {
     const fetchData = async () => {
       try {
         console.log("[DEBUG: About.jsx:fetchData:start:18] Starting parallel API calls")
-        const [teamResponse, featuresResponse, statisticsResponse, pageContentResponse] = await Promise.all([
-          api.get('/team'),
+        const [trainersResponse, featuresResponse, statisticsResponse, pageContentResponse] = await Promise.all([
+          api.get('/trainers'),
           api.get('/features?category=about'),
           api.get('/statistics?category=about'),
           api.get('/page-content/about')
         ])
-        
+
         console.log("[DEBUG: About.jsx:fetchData:success:25] All API calls completed successfully")
         // Handle nested response structure - services return { success: true, data: [...] }
         // API wraps it as { data: { success: true, data: [...] } }
-        const teamData = teamResponse.data?.data?.data || teamResponse.data?.data || []
-        
+        const trainersData = trainersResponse.data?.data?.data || trainersResponse.data?.data || []
+
         console.log("[DEBUG: About.jsx:fetchData:data:26] Data received:", {
-          team: Array.isArray(teamData) ? teamData.length : 0,
-          teamData: teamData,
+          trainers: Array.isArray(trainersData) ? trainersData.length : 0,
+          trainersData: trainersData,
           features: featuresResponse.data?.data?.data?.length || featuresResponse.data?.data?.length || 0,
           statistics: statisticsResponse.data?.data?.data?.length || statisticsResponse.data?.data?.length || 0,
           pageContent: !!pageContentResponse.data?.data
@@ -42,8 +42,10 @@ const About = () => {
         const featuresData = featuresResponse.data?.data?.data || featuresResponse.data?.data || []
         const statisticsData = statisticsResponse.data?.data?.data || statisticsResponse.data?.data || []
         const pageData = pageContentResponse.data?.data?.data || pageContentResponse.data?.data || null
-        
-        setTeam(Array.isArray(teamData) ? teamData : [])
+
+        // Filter to only show active trainers
+        const activeTrainers = (Array.isArray(trainersData) ? trainersData : []).filter(t => t.isActive !== false)
+        setTrainers(activeTrainers)
         setFeatures(Array.isArray(featuresData) ? featuresData : [])
         setStatistics(Array.isArray(statisticsData) ? statisticsData : [])
         setPageContent(pageData)
@@ -51,7 +53,7 @@ const About = () => {
       } catch (error) {
         console.error("[DEBUG: About.jsx:fetchData:error:35] Error fetching data:", error)
         setError('Failed to load page content. Please try again later.')
-        setTeam([])
+        setTrainers([])
         setFeatures([])
         setStatistics([])
         setPageContent(null)
@@ -113,7 +115,7 @@ const About = () => {
   }
 
   console.log("[DEBUG: About.jsx:render:main:98] Rendering main content with data:", {
-    team: team.length,
+    trainers: trainers.length,
     features: features.length,
     statistics: statistics.length,
     pageContent: !!pageContent
@@ -164,7 +166,7 @@ const About = () => {
               Numbers that reflect our commitment to quality education
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {statistics.length > 0 ? (
               statistics.map((stat, index) => {
@@ -346,7 +348,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section */}
+      {/* Our Trainers Section */}
       <section className="py-20 bg-neutral-50">
         <div className="container-custom">
           <motion.div
@@ -356,56 +358,56 @@ const About = () => {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-heading font-bold text-neutral-900 mb-4">
-              {pageContent?.sections?.team?.title || 'Meet Our Team'}
+              Our Trainers
             </h2>
             <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              {pageContent?.sections?.team?.subtitle || 'The experts behind your learning journey'}
+              Learn from industry professionals with real-world experience
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {team.length > 0 ? (
-              team.map((member, index) => (
+            {trainers.length > 0 ? (
+              trainers.map((trainer, index) => (
                 <motion.div
-                  key={member.id || member._id || `member-${index}`}
+                  key={trainer.id || trainer._id || `trainer-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
                   <Card hover className="text-center h-full">
                     <div className="w-24 h-24 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                      {member.imageUrl ? (
+                      {trainer.imageUrl ? (
                         <img
-                          src={member.imageUrl}
-                          alt={member.name}
+                          src={trainer.imageUrl}
+                          alt={trainer.name}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : (
                         <span className="text-white text-2xl font-bold">
-                          {member.name.charAt(0)}
+                          {trainer.name?.charAt(0) || 'T'}
                         </span>
                       )}
                     </div>
                     <h3 className="text-xl font-heading font-semibold text-neutral-900 mb-2">
-                      {member.name}
+                      {trainer.name}
                     </h3>
                     <div className="text-primary-600 font-medium mb-4">
-                      {member.role}
+                      {trainer.expertise || trainer.specialization?.join(', ') || 'Expert Trainer'}
                     </div>
-                    {member.department && (
+                    {trainer.experience && (
                       <div className="text-neutral-500 text-sm mb-2">
-                        {member.department}
+                        {trainer.experience} years of experience
                       </div>
                     )}
                     <p className="text-neutral-600 leading-relaxed mb-6">
-                      {member.bio}
+                      {trainer.bio}
                     </p>
-                    
+
                     {/* Social Links */}
                     <div className="flex justify-center gap-3">
-                      {member.socialLinks?.linkedin && (
+                      {trainer.socialLinks?.linkedin && (
                         <a
-                          href={member.socialLinks.linkedin}
+                          href={trainer.socialLinks.linkedin}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
@@ -413,9 +415,9 @@ const About = () => {
                           <Linkedin size={18} className="text-neutral-600 group-hover:text-primary-600" />
                         </a>
                       )}
-                      {member.socialLinks?.github && (
+                      {trainer.socialLinks?.github && (
                         <a
-                          href={member.socialLinks.github}
+                          href={trainer.socialLinks.github}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
@@ -423,9 +425,9 @@ const About = () => {
                           <Github size={18} className="text-neutral-600 group-hover:text-primary-600" />
                         </a>
                       )}
-                      {member.email && (
+                      {trainer.email && (
                         <a
-                          href={`mailto:${member.email}`}
+                          href={`mailto:${trainer.email}`}
                           className="w-10 h-10 bg-neutral-100 hover:bg-primary-100 rounded-xl flex items-center justify-center transition-colors duration-200 group"
                         >
                           <Mail size={18} className="text-neutral-600 group-hover:text-primary-600" />
@@ -436,12 +438,12 @@ const About = () => {
                 </motion.div>
               ))
             ) : (
-              // No team data available from database - show message
+              // No trainers data available from database - show message
               <div className="col-span-full text-center py-12">
                 <div className="text-neutral-400 mb-4">
                   <Users size={48} className="mx-auto mb-4" />
-                  <p className="text-lg font-medium text-neutral-600">No team members found</p>
-                  <p className="text-sm text-neutral-500 mt-2">Team members will appear here once they are added via the admin panel.</p>
+                  <p className="text-lg font-medium text-neutral-600">No trainers found</p>
+                  <p className="text-sm text-neutral-500 mt-2">Trainers will appear here once they are added via the admin panel.</p>
                 </div>
               </div>
             )}
