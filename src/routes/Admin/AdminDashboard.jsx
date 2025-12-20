@@ -250,6 +250,36 @@ const AdminDashboard = () => {
                             </div>
                         </Card>
                     </Link>
+
+                    <Link to="/admin/link-management">
+                        <Card hover>
+                            <div className="p-6">
+                                <Globe className="text-teal-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Link Management</h3>
+                                <p className="text-neutral-600 text-sm">Manage demo & payment links</p>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to="/admin/leads-dashboard">
+                        <Card hover>
+                            <div className="p-6">
+                                <BarChart3 className="text-emerald-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Leads Dashboard</h3>
+                                <p className="text-neutral-600 text-sm">View clicks, forms & payments</p>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to="/admin/razorpay-readiness">
+                        <Card hover>
+                            <div className="p-6">
+                                <DollarSign className="text-amber-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Payment Readiness</h3>
+                                <p className="text-neutral-600 text-sm">Razorpay compliance check</p>
+                            </div>
+                        </Card>
+                    </Link>
                 </div>
 
 

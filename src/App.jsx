@@ -15,6 +15,9 @@ import Certificates from './routes/Certificates'
 import Alumni from './routes/Alumni'
 import About from './routes/About'
 import Contact from './routes/Contact'
+import Terms from './routes/Terms'
+import Privacy from './routes/Privacy'
+import RefundPolicy from './routes/RefundPolicy'
 import AdminLogin from './routes/Admin/AdminLogin'
 import AdminDashboard from './routes/Admin/AdminDashboard'
 import AdminCourses from './routes/Admin/AdminCourses'
@@ -38,6 +41,11 @@ import PageTemplate from './routes/PageTemplate'
 import AdminDemoClassManagement from './routes/Admin/AdminDemoClassManagement'
 import AdminEnquiriesManagement from './routes/Admin/AdminEnquiriesManagement'
 import AdminLeadsOverview from './routes/Admin/AdminLeadsOverview'
+import AdminLinkManagement from './routes/Admin/AdminLinkManagement'
+import AdminLeadsDashboard from './routes/Admin/AdminLeadsDashboard'
+import PaymentSuccess from './routes/PaymentSuccess'
+import PaymentFailed from './routes/PaymentFailed'
+import AdminRazorpayReadiness from './routes/Admin/AdminRazorpayReadiness'
 
 function App() {
   const location = useLocation()
@@ -86,6 +94,18 @@ function App() {
                   <Route path="/admin/demo-class" element={<AdminDemoClassManagement />} />
                   <Route path="/admin/enquiries" element={<AdminEnquiriesManagement />} />
                   <Route path="/admin/leads" element={<AdminLeadsOverview />} />
+                  <Route path="/admin/link-management" element={<AdminLinkManagement />} />
+                  <Route path="/admin/leads-dashboard" element={<AdminLeadsDashboard />} />
+                  <Route path="/admin/razorpay-readiness" element={<AdminRazorpayReadiness />} />
+
+                  {/* Payment Routes */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/failed" element={<PaymentFailed />} />
+
+                  {/* Legal Pages - Static Routes */}
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/refund-policy" element={<RefundPolicy />} />
 
                   {/* Dynamic Page Route - Must be last */}
                   <Route path="/:slug" element={<PageTemplate />} />

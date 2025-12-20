@@ -1,26 +1,33 @@
 /**
  * AdminSetup.jsx
  * 
- * Temporary admin setup page accessible at /admin/setup
+ * Admin setup page accessible at /admin/setup
  * Used to configure admin roles in Firestore.
- * 
- * IMPORTANT: Remove this page in production!
+ * PROTECTED: Only accessible when an admin is already logged in
  * 
  * @module routes/Admin/AdminSetup
  */
 
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '../../config/firebase'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function AdminSetup() {
+    const { isAuthenticated } = useAuth()
     const [email, setEmail] = useState('admin@techspert.com')
     const [password, setPassword] = useState('admin123456')
     const [status, setStatus] = useState('')
     const [logs, setLogs] = useState([])
     const [loading, setLoading] = useState(false)
     const [mode, setMode] = useState('create') // 'create' or 'update'
+
+    // Require admin to be logged in
+    if (!isAuthenticated) {
+        return <Navigate to="/admin/login" replace />
+    }
 
     const log = (message, type = 'info') => {
         setLogs(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }])
@@ -238,8 +245,8 @@ export default function AdminSetup() {
                         <button
                             onClick={() => setMode('create')}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${mode === 'create'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                                 }`}
                         >
                             🆕 Create New User
@@ -247,8 +254,8 @@ export default function AdminSetup() {
                         <button
                             onClick={() => setMode('update')}
                             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${mode === 'update'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                                 }`}
                         >
                             🔄 Update Existing
@@ -287,8 +294,8 @@ export default function AdminSetup() {
                         onClick={handleSubmit}
                         disabled={loading}
                         className={`w-full py-3 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'create'
-                                ? 'bg-green-600 hover:bg-green-700'
-                                : 'bg-blue-600 hover:bg-blue-700'
+                            ? 'bg-green-600 hover:bg-green-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
                             }`}
                     >
                         {loading
