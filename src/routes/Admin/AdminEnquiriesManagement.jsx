@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-    MessageSquare, Search, Filter, RefreshCw, Eye,
-    CheckCircle, Clock, AlertCircle, Mail, Phone, User,
-    Calendar, ArrowRight
+    MessageSquare, Search, RefreshCw, Eye,
+    CheckCircle, Mail, Phone, User,
+    Calendar, ExternalLink, ArrowUpDown, Filter
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
@@ -12,11 +12,61 @@ import Modal from '../../components/UI/Modal'
 import { firebaseService } from '../../services/firebaseService'
 import logger from '../../utils/logger'
 
+// Helper function to generate mailto link with thank you template
+const generateReplyMailtoLink = (enquiry) => {
+    const recipientEmail = enquiry.email
+    const subject = encodeURIComponent(`Re: ${enquiry.subject || 'Your Enquiry'} - Thank You for Reaching Out`)
+
+    const body = encodeURIComponent(`Dear ${enquiry.name || 'Valued Customer'},
+
+Thank you for reaching out to Techspert!
+
+We have received your enquiry regarding "${enquiry.subject || 'your question'}" and our team is reviewing it. We will get back to you with a detailed response as soon as possible.
+
+Your Original Message:
+"${enquiry.message || ''}"
+
+In the meantime, if you have any urgent questions, feel free to reach out to us at:
+- Email: aryangoel299@gmail.com
+
+Best regards,
+Techspert Team
+`)
+
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${recipientEmail}&su=${subject}&body=${body}`
+}
+
+// Helper function to generate admin notification mailto link
+const generateAdminNotificationLink = (enquiry) => {
+    const adminEmail = 'aryangoel299@gmail.com'
+    const subject = encodeURIComponent(`New Enquiry from ${enquiry.name} - ${enquiry.subject || 'No Subject'}`)
+
+    const body = encodeURIComponent(`New Enquiry Received
+
+From: ${enquiry.name || 'Unknown'}
+Email: ${enquiry.email || 'Not provided'}
+Phone: ${enquiry.phone || 'Not provided'}
+Subject: ${enquiry.subject || 'No subject'}
+
+Message:
+${enquiry.message || 'No message'}
+
+---
+Received at: ${enquiry.createdAt ? new Date(enquiry.createdAt).toLocaleString() : 'Unknown'}
+Source: ${enquiry.source || 'contact_form'}
+
+Reply to this enquiry: ${generateReplyMailtoLink(enquiry)}
+`)
+
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${adminEmail}&su=${subject}&body=${body}`
+}
+
 const AdminEnquiriesManagement = () => {
     const [enquiries, setEnquiries] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterStatus, setFilterStatus] = useState('all')
+    const [sortBy, setSortBy] = useState('newest')
     const [selectedEnquiry, setSelectedEnquiry] = useState(null)
     const [showModal, setShowModal] = useState(false)
 
@@ -62,42 +112,128 @@ const AdminEnquiriesManagement = () => {
     const updateEnquiryStatus = async (enquiry, newStatus) => {
         try {
             const collection = enquiry.source || 'enquiries'
-            await firebaseService.updateDocument(collection, enquiry.id, { status: newStatus })
+            await firebaseService.updateDocument(collection, enquiry.id, {
+                status: newStatus,
+                ...(newStatus === 'in_progress' ? { emailSentToAdmin: true } : {}),
+                ...(newStatus === 'resolved' ? { resolvedAt: new Date().toISOString() } : {})
+            })
             setEnquiries(prev =>
                 prev.map(e => e.id === enquiry.id ? { ...e, status: newStatus } : e)
             )
-            toast.success('Status updated successfully')
+            toast.success(`Status updated to ${newStatus.replace('_', ' ')}`)
         } catch (error) {
             logger.error('Error updating enquiry status', error)
             toast.error('Failed to update status')
         }
     }
 
-    const filteredEnquiries = enquiries.filter(enq => {
+    const handleReplyClick = (enquiry) => {
+        // Open Gmail compose in new tab
+        const mailtoLink = generateReplyMailtoLink(enquiry)
+        window.open(mailtoLink, '_blank')
+
+        // Update status to in_progress
+        updateEnquiryStatus(enquiry, 'in_progress')
+    }
+
+    const handleResolvedClick = (enquiry) => {
+        updateEnquiryStatus(enquiry, 'resolved')
+    }
+
+    // Get status for display
+    const getEffectiveStatus = (enquiry) => {
+        if (enquiry.status === 'resolved' || enquiry.status === 'closed') {
+            return 'resolved'
+        }
+        if (enquiry.status === 'in_progress') {
+            return 'in_progress'
+        }
+        return 'new'
+    }
+
+    // Sort enquiries
+    const sortEnquiries = (enquiriesList) => {
+        const sorted = [...enquiriesList]
+        switch (sortBy) {
+            case 'newest':
+                sorted.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0)
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0)
+                    return dateB - dateA
+                })
+                break
+            case 'oldest':
+                sorted.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0)
+                    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0)
+                    return dateA - dateB
+                })
+                break
+            case 'name_asc':
+                sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                break
+            case 'name_desc':
+                sorted.sort((a, b) => (b.name || '').localeCompare(a.name || ''))
+                break
+            default:
+                break
+        }
+        return sorted
+    }
+
+    const filteredEnquiries = sortEnquiries(enquiries.filter(enq => {
         const matchesSearch =
             enq.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             enq.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             enq.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             enq.message?.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = filterStatus === 'all' || enq.status === filterStatus
-        return matchesSearch && matchesStatus
-    })
 
-    const getStatusColor = (status) => {
-        switch (status) {
+        const effectiveStatus = getEffectiveStatus(enq)
+        const matchesStatus = filterStatus === 'all' || effectiveStatus === filterStatus
+
+        return matchesSearch && matchesStatus
+    }))
+
+    // Get row background color based on status
+    const getRowBackgroundColor = (status) => {
+        const effectiveStatus = getEffectiveStatus({ status })
+        switch (effectiveStatus) {
+            case 'new':
+                return 'bg-blue-50 border-l-4 border-blue-400'
+            case 'in_progress':
+                return 'bg-green-50 border-l-4 border-green-400'
+            case 'resolved':
+                return 'bg-red-50 border-l-4 border-red-400'
+            default:
+                return 'bg-blue-50 border-l-4 border-blue-400'
+        }
+    }
+
+    const getStatusBadgeColor = (status) => {
+        const effectiveStatus = getEffectiveStatus({ status })
+        switch (effectiveStatus) {
             case 'new': return 'bg-blue-100 text-blue-800'
-            case 'in_progress': return 'bg-yellow-100 text-yellow-800'
-            case 'resolved': return 'bg-green-100 text-green-800'
-            case 'closed': return 'bg-gray-100 text-gray-800'
+            case 'in_progress': return 'bg-green-100 text-green-800'
+            case 'resolved': return 'bg-red-100 text-red-800'
             default: return 'bg-blue-100 text-blue-800'
+        }
+    }
+
+    const getStatusLabel = (status) => {
+        const effectiveStatus = getEffectiveStatus({ status })
+        switch (effectiveStatus) {
+            case 'new': return 'New'
+            case 'in_progress': return 'In Progress'
+            case 'resolved': return 'Resolved'
+            default: return 'New'
         }
     }
 
     const stats = {
         total: enquiries.length,
-        new: enquiries.filter(e => !e.status || e.status === 'new').length,
-        inProgress: enquiries.filter(e => e.status === 'in_progress').length,
-        resolved: enquiries.filter(e => e.status === 'resolved').length,
+        new: enquiries.filter(e => getEffectiveStatus(e) === 'new').length,
+        inProgress: enquiries.filter(e => getEffectiveStatus(e) === 'in_progress').length,
+        resolved: enquiries.filter(e => getEffectiveStatus(e) === 'resolved').length,
     }
 
     if (loading) {
@@ -149,29 +285,30 @@ const AdminEnquiriesManagement = () => {
                             <div className="text-sm text-neutral-600">Total Enquiries</div>
                         </div>
                     </Card>
-                    <Card className="text-center">
+                    <Card className="text-center border-l-4 border-blue-400">
                         <div className="p-4">
                             <div className="text-3xl font-bold text-blue-600">{stats.new}</div>
                             <div className="text-sm text-neutral-600">New</div>
                         </div>
                     </Card>
-                    <Card className="text-center">
+                    <Card className="text-center border-l-4 border-green-400">
                         <div className="p-4">
-                            <div className="text-3xl font-bold text-yellow-600">{stats.inProgress}</div>
+                            <div className="text-3xl font-bold text-green-600">{stats.inProgress}</div>
                             <div className="text-sm text-neutral-600">In Progress</div>
                         </div>
                     </Card>
-                    <Card className="text-center">
+                    <Card className="text-center border-l-4 border-red-400">
                         <div className="p-4">
-                            <div className="text-3xl font-bold text-green-600">{stats.resolved}</div>
+                            <div className="text-3xl font-bold text-red-600">{stats.resolved}</div>
                             <div className="text-sm text-neutral-600">Resolved</div>
                         </div>
                     </Card>
                 </div>
 
-                {/* Filters */}
+                {/* Filters and Search */}
                 <Card className="mb-6">
-                    <div className="p-4 flex flex-col md:flex-row gap-4">
+                    <div className="p-4 space-y-4">
+                        {/* Search */}
                         <div className="flex-1 relative">
                             <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
                             <input
@@ -182,17 +319,68 @@ const AdminEnquiriesManagement = () => {
                                 className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                             />
                         </div>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="new">New</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="resolved">Resolved</option>
-                            <option value="closed">Closed</option>
-                        </select>
+
+                        {/* Filter Buttons */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1 mr-2">
+                                <Filter size={16} className="text-neutral-500" />
+                                <span className="text-sm font-medium text-neutral-700">Filter:</span>
+                            </div>
+                            <button
+                                onClick={() => setFilterStatus('all')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === 'all'
+                                        ? 'bg-neutral-800 text-white'
+                                        : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                    }`}
+                            >
+                                All ({stats.total})
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('new')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === 'new'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                    }`}
+                            >
+                                New ({stats.new})
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('in_progress')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === 'in_progress'
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                    }`}
+                            >
+                                In Progress ({stats.inProgress})
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('resolved')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === 'resolved'
+                                        ? 'bg-red-600 text-white'
+                                        : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                    }`}
+                            >
+                                Resolved ({stats.resolved})
+                            </button>
+                        </div>
+
+                        {/* Sort Options */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 mr-2">
+                                <ArrowUpDown size={16} className="text-neutral-500" />
+                                <span className="text-sm font-medium text-neutral-700">Sort:</span>
+                            </div>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                            >
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="name_asc">Name A-Z</option>
+                                <option value="name_desc">Name Z-A</option>
+                            </select>
+                        </div>
                     </div>
                 </Card>
 
@@ -205,7 +393,7 @@ const AdminEnquiriesManagement = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
                         >
-                            <Card className="hover:shadow-md transition-shadow">
+                            <Card className={`hover:shadow-md transition-shadow ${getRowBackgroundColor(enquiry.status)}`}>
                                 <div className="p-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
@@ -213,8 +401,8 @@ const AdminEnquiriesManagement = () => {
                                                 <h3 className="font-semibold text-neutral-900">
                                                     {enquiry.subject || 'No Subject'}
                                                 </h3>
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(enquiry.status)}`}>
-                                                    {enquiry.status || 'new'}
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(enquiry.status)}`}>
+                                                    {getStatusLabel(enquiry.status)}
                                                 </span>
                                                 <span className="px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded-full text-xs">
                                                     {enquiry.source}
@@ -244,17 +432,9 @@ const AdminEnquiriesManagement = () => {
                                             </p>
                                         </div>
 
-                                        <div className="flex items-center gap-2 ml-4">
-                                            <select
-                                                value={enquiry.status || 'new'}
-                                                onChange={(e) => updateEnquiryStatus(enquiry, e.target.value)}
-                                                className="text-sm px-2 py-1 border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500"
-                                            >
-                                                <option value="new">New</option>
-                                                <option value="in_progress">In Progress</option>
-                                                <option value="resolved">Resolved</option>
-                                                <option value="closed">Closed</option>
-                                            </select>
+                                        {/* Action Buttons */}
+                                        <div className="flex flex-col gap-2 ml-4">
+                                            {/* View Button */}
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -262,9 +442,33 @@ const AdminEnquiriesManagement = () => {
                                                     setSelectedEnquiry(enquiry)
                                                     setShowModal(true)
                                                 }}
+                                                className="flex items-center gap-1"
                                             >
                                                 <Eye size={14} />
+                                                View
                                             </Button>
+
+                                            {/* Reply Button - Only show if not resolved */}
+                                            {getEffectiveStatus(enquiry) !== 'resolved' && (
+                                                <button
+                                                    onClick={() => handleReplyClick(enquiry)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                    Reply
+                                                </button>
+                                            )}
+
+                                            {/* Resolved Button - Only show if not already resolved */}
+                                            {getEffectiveStatus(enquiry) !== 'resolved' && (
+                                                <button
+                                                    onClick={() => handleResolvedClick(enquiry)}
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                                >
+                                                    <CheckCircle size={14} />
+                                                    Resolved
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -311,8 +515,8 @@ const AdminEnquiriesManagement = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-neutral-500">Status</label>
-                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedEnquiry.status)}`}>
-                                    {selectedEnquiry.status || 'new'}
+                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(selectedEnquiry.status)}`}>
+                                    {getStatusLabel(selectedEnquiry.status)}
                                 </span>
                             </div>
                         </div>
@@ -330,13 +534,31 @@ const AdminEnquiriesManagement = () => {
                         </div>
 
                         <div className="flex justify-end gap-2 pt-4">
-                            <a href={`mailto:${selectedEnquiry.email}`}>
-                                <Button variant="outline">
-                                    <Mail size={16} className="mr-2" />
-                                    Reply via Email
-                                </Button>
-                            </a>
-                            <Button onClick={() => setShowModal(false)}>
+                            {getEffectiveStatus(selectedEnquiry) !== 'resolved' && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            handleReplyClick(selectedEnquiry)
+                                            setShowModal(false)
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                                    >
+                                        <ExternalLink size={16} />
+                                        Reply via Email
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleResolvedClick(selectedEnquiry)
+                                            setShowModal(false)
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                                    >
+                                        <CheckCircle size={16} />
+                                        Mark Resolved
+                                    </button>
+                                </>
+                            )}
+                            <Button variant="outline" onClick={() => setShowModal(false)}>
                                 Close
                             </Button>
                         </div>
