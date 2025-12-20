@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Users, Award, Code, Target, CheckCircle, Star, Linkedin, Github, Mail, Loader2 } from 'lucide-react'
 import { api } from '../services/api'
@@ -139,12 +140,16 @@ const About = () => {
               {pageContent?.hero?.description || "We're on a mission to democratize technology education and help people around the world build successful careers in tech."}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg">
-                Explore Our Courses
-              </Button>
-              <Button variant="outline" size="lg">
-                Meet Our Team
-              </Button>
+              <Link to="/courses">
+                <Button size="lg">
+                  Explore Our Courses
+                </Button>
+              </Link>
+              <a href="#trainers">
+                <Button variant="outline" size="lg">
+                  Meet Our Trainers
+                </Button>
+              </a>
             </div>
           </motion.div>
         </div>
@@ -238,14 +243,7 @@ const About = () => {
               <p className="text-lg text-neutral-600 leading-relaxed mb-8">
                 {pageContent?.mission?.subdescription || "We're committed to helping our students not just learn new skills, but apply them in real-world scenarios and build successful careers in technology."}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg">
-                  Join Our Community
-                </Button>
-                <Button variant="outline" size="lg">
-                  Learn More
-                </Button>
-              </div>
+
             </motion.div>
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -349,7 +347,7 @@ const About = () => {
       </section>
 
       {/* Our Trainers Section */}
-      <section className="py-20 bg-neutral-50">
+      <section id="trainers" className="py-20 bg-neutral-50">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -466,12 +464,16 @@ const About = () => {
               {pageContent?.cta?.description || 'Join thousands of students who have transformed their careers with our comprehensive technology courses'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="secondary" size="lg">
-                Browse Courses
-              </Button>
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
-                Contact Us
-              </Button>
+              <Link to="/courses">
+                <Button variant="secondary" size="lg">
+                  Browse Courses
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
+                  Contact Us
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>

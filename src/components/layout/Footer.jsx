@@ -191,7 +191,10 @@ const Footer = () => {
         <div className="border-t border-neutral-800 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-neutral-400 text-sm">© {currentYear} {legal.copyright}</p>
-            <div className="flex space-x-6 text-sm">
+            <div className="flex flex-wrap justify-center md:justify-end gap-x-6 gap-y-2 text-sm">
+              <Link to="/terms" className="text-neutral-400 hover:text-white transition-colors">Terms & Conditions</Link>
+              <Link to="/privacy" className="text-neutral-400 hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/refund-policy" className="text-neutral-400 hover:text-white transition-colors">Refund Policy</Link>
               {(legal.links || []).filter(l => l.isActive).map((link) => (
                 <Link key={link.name} to={link.href} className="text-neutral-400 hover:text-white transition-colors">{link.name}</Link>
               ))}

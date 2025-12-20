@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Clock, Users, Star, Play, ArrowLeft, Download, Share2, BookOpen, Award, ExternalLink, Check } from 'lucide-react'
+import { Clock, Users, Star, Play, ArrowLeft, Download, Share2, BookOpen, Award, ExternalLink, Check, CreditCard } from 'lucide-react'
 import { api } from '../services/api'
 import { toast } from 'sonner'
 import Button from '../components/UI/Button'
 import Card from '../components/UI/Card'
+import EnrollmentModal from '../components/EnrollmentModal'
 import { getDisplayPrice } from '../utils/saleUtils'
 
 const CourseDetail = () => {
@@ -13,6 +14,7 @@ const CourseDetail = () => {
   const [course, setCourse] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -409,8 +411,12 @@ const CourseDetail = () => {
                   </div>
                 </div>
 
-                <Button className="w-full mb-4" size="lg">
-                  <BookOpen size={20} className="mr-2" />
+                <Button
+                  className="w-full mb-4"
+                  size="lg"
+                  onClick={() => setShowEnrollmentModal(true)}
+                >
+                  <CreditCard size={20} className="mr-2" />
                   Enroll Now
                 </Button>
 
@@ -458,6 +464,14 @@ const CourseDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Enrollment Modal */}
+      <EnrollmentModal
+        isOpen={showEnrollmentModal}
+        onClose={() => setShowEnrollmentModal(false)}
+        courseId={id}
+        courseName={title}
+      />
     </div>
   )
 }

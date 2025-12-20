@@ -4,7 +4,8 @@ import { X, Calendar, Clock, Users, ExternalLink, CheckCircle, Mail, Phone, User
 import { toast } from 'sonner'
 import { doc, onSnapshot, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../config/firebase'
-import { trackClick, trackSubmission } from '../services/leadTrackingService'
+import { linkClicksService, formSubmissionsService } from '../services/leadTrackingService'
+import { getTrackingContext, storeTrackingToken, getStoredTrackingToken } from '../services/trackingService'
 import { useSiteSettings } from '../contexts/SiteSettingsContext'
 import Button from './UI/Button'
 import Card from './UI/Card'
@@ -90,8 +91,21 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
       toast.error('Demo link not available. Please register below to be notified.')
       return
     }
-    // Track the click
-    await trackClick(selectedCourse, 'demo_modal')
+    // Track the click with device info
+    try {
+      const context = getTrackingContext()
+      const result = await linkClicksService.trackClick({
+        courseId: selectedCourse,
+        courseName: selectedCourseData.title || 'Unknown Course',
+        linkType: 'demo',
+        ...context
+      })
+      if (result.trackingToken) {
+        storeTrackingToken(result.trackingToken)
+      }
+    } catch (error) {
+      logger.warn('Click tracking failed', error)
+    }
     // Open the link
     window.open(effectiveDemoLink, '_blank')
   }
@@ -126,14 +140,21 @@ const FreeDemoModal = ({ isOpen, onClose }) => {
 
       logger.info('Demo signup saved', { id: signupDoc.id })
 
-      // 2. Track in lead_tracking collection
-      await trackSubmission(selectedCourse, {
+      // 2. Track in form_submissions collection with tracking token
+      const trackingToken = getStoredTrackingToken()
+      await formSubmissionsService.create({
+        trackingToken,
         name: submitData.name,
         email: submitData.email,
         phone: submitData.phone,
-        experienceLevel: submitData.experience,
-        source: 'demo_registration',
-        signupId: signupDoc.id,
+        courseId: selectedCourse,
+        courseName: submitData.courseName,
+        formType: 'demo_form',
+        source: 'demo_modal',
+        rawFormData: {
+          experience: submitData.experience,
+          signupId: signupDoc.id
+        }
       })
 
       // Email is automatically sent by Firebase Cloud Function when document is created
