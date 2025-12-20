@@ -81,12 +81,35 @@ const Contact = () => {
         ...formData,
         status: 'new',
         createdAt: new Date().toISOString(),
-        source: 'contact_form'
+        source: 'contact_form',
+        // Email tracking fields
+        autoResponseSent: false,
+        emailSentToAdmin: false
       }
 
       const result = await firebaseService.createDocument('enquiries', enquiryData)
 
       if (result.success) {
+        // Automatically send confirmation email
+        try {
+          const { sendEnquiryConfirmEmail, updateDoc, doc } = await import('../services/emailService')
+          const emailResult = await sendEnquiryConfirmEmail(formData)
+
+          if (emailResult.success) {
+            // Update enquiry to mark email as sent
+            try {
+              await firebaseService.updateDocument('enquiries', result.id, {
+                autoResponseSent: true,
+                autoResponseSentAt: new Date().toISOString()
+              })
+            } catch (err) {
+              console.warn('Failed to update email status', err)
+            }
+          }
+        } catch (emailError) {
+          console.warn('Auto-email not sent:', emailError)
+        }
+
         toast.success('Thank you for your message! We\'ll get back to you soon.')
         setFormData({ name: '', email: '', subject: '', message: '' })
       } else {
