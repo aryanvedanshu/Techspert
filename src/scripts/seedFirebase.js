@@ -6,13 +6,13 @@
  * Make sure Firebase is initialized before running
  */
 
-import { 
-  collection, 
-  addDoc, 
-  setDoc, 
-  doc, 
+import {
+  collection,
+  addDoc,
+  setDoc,
+  doc,
   getDocs,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
@@ -451,7 +451,7 @@ const generateFooter = () => ({
 // Main seeding function
 export const seedFirebase = async () => {
   console.log('🌱 Starting Firebase seeding...')
-  
+
   try {
     // Seed Courses
     console.log('📚 Seeding courses...')
@@ -543,10 +543,10 @@ export const seedFirebase = async () => {
     try {
       const adminEmail = 'admin@techspert.com'
       const adminPassword = 'admin123456'
-      
+
       // Check if admin already exists
       const adminUser = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword)
-      
+
       // Add admin document to Firestore
       await setDoc(doc(db, 'admins', adminUser.user.uid), {
         email: adminEmail,
@@ -583,9 +583,63 @@ export const seedFirebase = async () => {
   }
 }
 
+/**
+ * Create additional super admin user
+ * Call this function after creating the Firebase Auth user via /admin/setup or Firebase Console
+ * 
+ * @param {string} uid - The Firebase Auth UID of the user
+ */
+export const createSuperAdmin = async (uid) => {
+  console.log('👤 Creating super admin for aryangoel299@gmail.com...')
+
+  try {
+    const adminEmail = 'aryangoel299@gmail.com'
+
+    // Add admin document to Firestore
+    await setDoc(doc(db, 'admins', uid), {
+      email: adminEmail,
+      name: 'Super Admin',
+      displayName: 'Aryan Goel',
+      role: 'super-admin',
+      isActive: true,
+      isLocked: false,
+      permissions: {
+        courses: { create: true, read: true, update: true, delete: true },
+        projects: { create: true, read: true, update: true, delete: true },
+        alumni: { create: true, read: true, update: true, delete: true },
+        users: { create: true, read: true, update: true, delete: true },
+        admins: { create: true, read: true, update: true, delete: true },
+        settings: { create: true, read: true, update: true, delete: true },
+        enquiries: { create: true, read: true, update: true, delete: true }
+      },
+      createdAt: createTimestamp(new Date()),
+      updatedAt: createTimestamp(new Date())
+    })
+
+    console.log('✅ Created super admin:', adminEmail)
+    return { success: true, message: 'Super admin created successfully' }
+  } catch (error) {
+    console.error('❌ Error creating super admin:', error)
+    throw error
+  }
+}
+
+/**
+ * Create super admin document by email (after Firebase Auth user exists)
+ * Use this when you know the email but not the UID
+ */
+export const setupAdminByEmail = async (email = 'aryangoel299@gmail.com') => {
+  console.log(`👤 Setting up admin for ${email}...`)
+  console.log('⚠️ Note: You must first create the Firebase Auth user via /admin/setup or Firebase Console')
+  console.log('   Then call createSuperAdmin(uid) with the user\'s UID')
+  return { success: false, message: 'Please create Firebase Auth user first, then use createSuperAdmin(uid)' }
+}
+
 // Export for use in browser console or Node.js
 if (typeof window !== 'undefined') {
   window.seedFirebase = seedFirebase
+  window.createSuperAdmin = createSuperAdmin
+  window.setupAdminByEmail = setupAdminByEmail
 }
 
 export default seedFirebase

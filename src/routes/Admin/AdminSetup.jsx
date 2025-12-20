@@ -11,7 +11,7 @@
 
 import { useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '../../config/firebase'
 
 export default function AdminSetup() {
@@ -20,12 +20,78 @@ export default function AdminSetup() {
     const [status, setStatus] = useState('')
     const [logs, setLogs] = useState([])
     const [loading, setLoading] = useState(false)
+    const [mode, setMode] = useState('create') // 'create' or 'update'
 
     const log = (message, type = 'info') => {
         setLogs(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }])
     }
 
-    const setupAdmin = async () => {
+    const createNewAdmin = async () => {
+        setLoading(true)
+        setStatus('')
+        setLogs([])
+
+        try {
+            log('Creating new Firebase Auth user...')
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+            const uid = userCredential.user.uid
+            log(`✅ Created user! UID: ${uid}`, 'success')
+
+            // Create user document
+            log('Creating user document...')
+            const userDocRef = doc(db, 'users', uid)
+            await setDoc(userDocRef, {
+                email: email,
+                displayName: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
+                role: 'super-admin',
+                isAdmin: true,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })
+            log('✅ Created user document with super-admin role', 'success')
+
+            // Create admin document
+            log('Creating admin document...')
+            const adminDocRef = doc(db, 'admins', uid)
+            await setDoc(adminDocRef, {
+                email: email,
+                name: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
+                displayName: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
+                role: 'super-admin',
+                isActive: true,
+                isLocked: false,
+                permissions: {
+                    courses: { create: true, read: true, update: true, delete: true },
+                    projects: { create: true, read: true, update: true, delete: true },
+                    alumni: { create: true, read: true, update: true, delete: true },
+                    users: { create: true, read: true, update: true, delete: true },
+                    admins: { create: true, read: true, update: true, delete: true },
+                    settings: { create: true, read: true, update: true, delete: true },
+                    enquiries: { create: true, read: true, update: true, delete: true }
+                },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })
+            log('✅ Created admin document with super-admin role', 'success')
+
+            setStatus('success')
+            log('🎉 New admin created! You can now log in.', 'success')
+        } catch (error) {
+            if (error.code === 'auth/email-already-in-use') {
+                log('⚠️ User already exists. Try "Update Existing" mode instead.', 'error')
+            } else if (error.code === 'auth/weak-password') {
+                log('❌ Password is too weak. Use at least 6 characters.', 'error')
+            } else {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
+            setStatus('error')
+        }
+
+        setLoading(false)
+    }
+
+    const updateExistingAdmin = async () => {
         setLoading(true)
         setStatus('')
         setLogs([])
@@ -54,7 +120,7 @@ export default function AdminSetup() {
                 log('Creating new user document...')
                 await setDoc(userDocRef, {
                     email: email,
-                    displayName: 'Super Admin',
+                    displayName: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
                     role: 'super-admin',
                     isAdmin: true,
                     isActive: true,
@@ -81,9 +147,20 @@ export default function AdminSetup() {
                 log('Creating new admin document...')
                 await setDoc(adminDocRef, {
                     email: email,
-                    name: 'Super Admin',
+                    name: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
+                    displayName: email.includes('aryan') ? 'Aryan Goel' : 'Super Admin',
                     role: 'super-admin',
                     isActive: true,
+                    isLocked: false,
+                    permissions: {
+                        courses: { create: true, read: true, update: true, delete: true },
+                        projects: { create: true, read: true, update: true, delete: true },
+                        alumni: { create: true, read: true, update: true, delete: true },
+                        users: { create: true, read: true, update: true, delete: true },
+                        admins: { create: true, read: true, update: true, delete: true },
+                        settings: { create: true, read: true, update: true, delete: true },
+                        enquiries: { create: true, read: true, update: true, delete: true }
+                    },
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
@@ -93,11 +170,27 @@ export default function AdminSetup() {
             setStatus('success')
             log('🎉 Admin setup complete! You can now log in.', 'success')
         } catch (error) {
-            log(`❌ Error: ${error.message}`, 'error')
+            if (error.code === 'auth/user-not-found') {
+                log('⚠️ User does not exist. Try "Create New" mode instead.', 'error')
+            } else if (error.code === 'auth/wrong-password') {
+                log('❌ Wrong password. Please check your credentials.', 'error')
+            } else if (error.code === 'auth/invalid-credential') {
+                log('⚠️ Invalid credentials. User may not exist. Try "Create New" mode.', 'error')
+            } else {
+                log(`❌ Error: ${error.message}`, 'error')
+            }
             setStatus('error')
         }
 
         setLoading(false)
+    }
+
+    const handleSubmit = () => {
+        if (mode === 'create') {
+            createNewAdmin()
+        } else {
+            updateExistingAdmin()
+        }
     }
 
     return (
@@ -105,10 +198,68 @@ export default function AdminSetup() {
             <div className="max-w-lg w-full bg-white rounded-2xl shadow-lg p-8">
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-neutral-900">Admin Setup</h1>
-                    <p className="text-neutral-500 mt-2">Configure admin roles in Firestore</p>
+                    <p className="text-neutral-500 mt-2">Create or configure admin users</p>
                     <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
                         ⚠️ Remove this page in production!
                     </div>
+                </div>
+
+                {/* Quick Setup Presets */}
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 mb-3">Quick Setup Presets:</p>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => {
+                                setEmail('admin@techspert.com')
+                                setPassword('admin123456')
+                                setMode('update')
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium bg-white border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                            Default Admin (Existing)
+                        </button>
+                        <button
+                            onClick={() => {
+                                setEmail('aryangoel299@gmail.com')
+                                setPassword('Man@12345H')
+                                setMode('create')
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Aryan (Create New)
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mode Selection */}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Mode</label>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setMode('create')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${mode === 'create'
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                }`}
+                        >
+                            🆕 Create New User
+                        </button>
+                        <button
+                            onClick={() => setMode('update')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${mode === 'update'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                                }`}
+                        >
+                            🔄 Update Existing
+                        </button>
+                    </div>
+                    <p className="text-xs text-neutral-500 mt-2">
+                        {mode === 'create'
+                            ? 'Creates a new Firebase Auth user and Firestore documents'
+                            : 'Signs in existing user and updates their admin role'
+                        }
+                    </p>
                 </div>
 
                 <div className="space-y-4">
@@ -133,11 +284,19 @@ export default function AdminSetup() {
                     </div>
 
                     <button
-                        onClick={setupAdmin}
+                        onClick={handleSubmit}
                         disabled={loading}
-                        className="w-full py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`w-full py-3 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'create'
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
                     >
-                        {loading ? 'Setting up...' : 'Setup Admin Role'}
+                        {loading
+                            ? 'Processing...'
+                            : mode === 'create'
+                                ? '🆕 Create New Admin'
+                                : '🔄 Update Admin Role'
+                        }
                     </button>
                 </div>
 
