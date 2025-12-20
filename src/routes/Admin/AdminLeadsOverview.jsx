@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     Users, MousePointer, FileText, CreditCard, RefreshCw,
-    Eye, Key, Copy, Search, Filter, Calendar, TrendingUp
+    Eye, Key, Copy, Search, Filter, Calendar, TrendingUp, Mail, ExternalLink
 } from 'lucide-react'
 import { toast } from 'sonner'
 import Card from '../../components/UI/Card'
@@ -12,8 +12,93 @@ import { firebaseService } from '../../services/firebaseService'
 import { generatePasswordFromFullName } from '../../utils/passwordGenerator'
 import logger from '../../utils/logger'
 
+// Helper function to generate mailto link for admin notification
+const generateAdminNotificationLink = (data) => {
+    const adminEmail = 'aryangoel299@gmail.com'
+    const subject = encodeURIComponent(`New Demo Registration: ${data.name} - ${data.courseName || 'Course'}`)
+
+    const body = encodeURIComponent(`🎓 New Demo Class Registration
+
+Student Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Name: ${data.name}
+Email: ${data.email}
+Phone: ${data.phone || 'Not provided'}
+Experience Level: ${data.experience || 'Not specified'}
+Course Interest: ${data.courseName || data.courseInterest || 'Not specified'}
+
+Demo Session Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 Day: Every Saturday
+⏰ Time: 2:00 PM - 3:00 PM IST
+⏱️ Duration: 1 Hour
+
+Registered at: ${data.createdAt ? new Date(data.createdAt).toLocaleString() : 'Unknown'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+Please send them a confirmation email with the demo link.
+`)
+
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${adminEmail}&su=${subject}&body=${body}`
+}
+
+// Helper function to generate welcome email link for student
+const generateStudentWelcomeLink = (data, demoLink = '') => {
+    const subject = encodeURIComponent(`Welcome! Your Free Demo Session - Techspert`)
+
+    const body = encodeURIComponent(`Dear ${data.name},
+
+Thank you for registering for our Free Demo Session! 🎉
+
+We're excited to have you join us for the ${data.courseName || 'course'} demo class.
+
+📋 SESSION DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 Day: Every Saturday
+⏰ Time: 2:00 PM - 3:00 PM IST
+⏱️ Duration: 1 Hour
+👥 Max Participants: 20
+${demoLink ? `
+🔗 JOIN LINK: ${demoLink}
+
+Click the link above at the scheduled time to join the session.
+` : `
+We will send you the meeting link before the session.
+`}
+
+📝 WHAT TO EXPECT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Introduction to the course
+• Live coding demonstration
+• Q&A session
+• Course overview and career guidance
+
+💡 TIPS FOR THE SESSION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Join 5 minutes early
+• Have a stable internet connection
+• Prepare any questions you have
+• Keep a notebook ready
+
+If you have any questions before the session, feel free to reply to this email.
+
+We look forward to seeing you!
+
+Best regards,
+Techspert Team
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📧 Email: aryangoel299@gmail.com
+🌐 Website: techspert.com
+`)
+
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${data.email}&su=${subject}&body=${body}`
+}
+
 const AdminLeadsOverview = () => {
     const [demoRegistrations, setDemoRegistrations] = useState([])
+    const [demoSignups, setDemoSignups] = useState([])
+    const [leadTracking, setLeadTracking] = useState([])
     const [leadSyncResults, setLeadSyncResults] = useState([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState('overview')
@@ -28,10 +113,22 @@ const AdminLeadsOverview = () => {
     const fetchLeads = async () => {
         setLoading(true)
         try {
-            // Fetch demo registrations
+            // Fetch demo registrations (old collection)
             const demoResult = await firebaseService.getDocuments('demo_class_registrations', [], 'submittedAt', 'desc')
             if (demoResult.success) {
                 setDemoRegistrations(demoResult.data || [])
+            }
+
+            // Fetch demo signups (new collection from FreeDemoModal)
+            const signupsResult = await firebaseService.getDocuments('demoSignups', [], 'createdAt', 'desc')
+            if (signupsResult.success) {
+                setDemoSignups(signupsResult.data || [])
+            }
+
+            // Fetch lead tracking data
+            const trackingResult = await firebaseService.getDocuments('lead_tracking', [], 'createdAt', 'desc')
+            if (trackingResult.success) {
+                setLeadTracking(trackingResult.data || [])
             }
 
             // Fetch lead sync results
@@ -47,13 +144,19 @@ const AdminLeadsOverview = () => {
         }
     }
 
+    // Combine all demo registrations
+    const allDemoRegistrations = [
+        ...demoSignups.map(d => ({ ...d, source: 'website' })),
+        ...demoRegistrations.map(d => ({ ...d, source: 'legacy' })),
+    ]
+
     // Categorize leads
     const stats = {
-        clicked: demoRegistrations.length,
-        submitted: leadSyncResults.filter(l => l.formType === 'demo').length,
+        clicked: leadTracking.filter(l => l.stage === 'clicked').length,
+        submitted: leadTracking.filter(l => l.stage === 'submitted').length + allDemoRegistrations.length,
         schoolForms: leadSyncResults.filter(l => l.formType === 'school').length,
-        payments: leadSyncResults.filter(l => l.formType === 'payment').length,
-        total: demoRegistrations.length + leadSyncResults.length,
+        payments: leadTracking.filter(l => l.stage === 'paid').length + leadSyncResults.filter(l => l.formType === 'payment').length,
+        total: allDemoRegistrations.length + leadTracking.length + leadSyncResults.length,
     }
 
     // Generate password for a lead
@@ -87,6 +190,35 @@ const AdminLeadsOverview = () => {
         } catch (error) {
             logger.error('Failed to save password', error)
             toast.error('Failed to save password')
+        }
+    }
+
+    // Mark email as sent
+    const markEmailSent = async (registration) => {
+        try {
+            await firebaseService.updateDocument('demoSignups', registration.id, {
+                emailSent: true,
+                emailSentAt: new Date().toISOString(),
+            })
+            toast.success('Marked as email sent')
+            fetchLeads()
+        } catch (error) {
+            logger.error('Failed to update email status', error)
+            toast.error('Failed to update status')
+        }
+    }
+
+    // Update registration status
+    const updateStatus = async (registration, newStatus) => {
+        try {
+            await firebaseService.updateDocument('demoSignups', registration.id, {
+                status: newStatus,
+            })
+            toast.success(`Status updated to ${newStatus}`)
+            fetchLeads()
+        } catch (error) {
+            logger.error('Failed to update status', error)
+            toast.error('Failed to update status')
         }
     }
 
@@ -181,8 +313,8 @@ const AdminLeadsOverview = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-colors ${activeTab === tab.id
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-white text-neutral-600 hover:bg-neutral-100'
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-white text-neutral-600 hover:bg-neutral-100'
                                 }`}
                         >
                             <tab.icon size={16} />
@@ -231,20 +363,37 @@ const AdminLeadsOverview = () => {
                                             <th className="px-4 py-3 text-left text-sm font-medium">Phone</th>
                                             <th className="px-4 py-3 text-left text-sm font-medium">Interest</th>
                                             <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
+                                            <th className="px-4 py-3 text-left text-sm font-medium">Email</th>
+                                            <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y">
-                                        {demoRegistrations.map(reg => (
-                                            <tr key={reg.id} className="hover:bg-neutral-50">
+                                        {allDemoRegistrations.map(reg => (
+                                            <tr key={reg.id} className={`hover:bg-neutral-50 ${reg.status === 'pending' ? 'bg-blue-50' :
+                                                    reg.status === 'contacted' ? 'bg-green-50' :
+                                                        reg.status === 'converted' ? 'bg-red-50' : ''
+                                                }`}>
                                                 <td className="px-4 py-3 font-medium">{reg.name}</td>
                                                 <td className="px-4 py-3 text-neutral-600">{reg.email}</td>
                                                 <td className="px-4 py-3 text-neutral-600">{reg.phone}</td>
                                                 <td className="px-4 py-3">
-                                                    {reg.courseInterest?.slice(0, 2).map((c, i) => (
-                                                        <span key={i} className="mr-1 px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
-                                                            {c}
+                                                    {reg.courseName ? (
+                                                        <span className="px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
+                                                            {reg.courseName}
                                                         </span>
-                                                    ))}
+                                                    ) : reg.courseInterest ? (
+                                                        Array.isArray(reg.courseInterest)
+                                                            ? reg.courseInterest.slice(0, 2).map((c, i) => (
+                                                                <span key={i} className="mr-1 px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
+                                                                    {c}
+                                                                </span>
+                                                            ))
+                                                            : (
+                                                                <span className="px-2 py-0.5 bg-primary-100 text-primary-700 text-xs rounded">
+                                                                    {reg.courseInterest}
+                                                                </span>
+                                                            )
+                                                    ) : null}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span className={`px-2 py-1 rounded-full text-xs ${reg.status === 'converted' ? 'bg-green-100 text-green-700' :
@@ -254,11 +403,78 @@ const AdminLeadsOverview = () => {
                                                         {reg.status || 'pending'}
                                                     </span>
                                                 </td>
+                                                <td className="px-4 py-3">
+                                                    {reg.emailSent ? (
+                                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                                            ✓ Sent
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                                                            Not sent
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex gap-1">
+                                                        {/* Send Welcome Email */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const link = generateStudentWelcomeLink(reg)
+                                                                window.open(link, '_blank')
+                                                            }}
+                                                            className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors"
+                                                            title="Send Welcome Email to Student"
+                                                        >
+                                                            <Mail size={14} />
+                                                        </button>
+
+                                                        {/* Notify Admin */}
+                                                        <button
+                                                            onClick={() => {
+                                                                const link = generateAdminNotificationLink(reg)
+                                                                window.open(link, '_blank')
+                                                            }}
+                                                            className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+                                                            title="Notify Admin"
+                                                        >
+                                                            <ExternalLink size={14} />
+                                                        </button>
+
+                                                        {/* Mark Email Sent */}
+                                                        {reg.source === 'website' && !reg.emailSent && (
+                                                            <button
+                                                                onClick={() => markEmailSent(reg)}
+                                                                className="p-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition-colors"
+                                                                title="Mark Email as Sent"
+                                                            >
+                                                                ✓
+                                                            </button>
+                                                        )}
+
+                                                        {/* Status Buttons */}
+                                                        {reg.source === 'website' && reg.status !== 'contacted' && (
+                                                            <button
+                                                                onClick={() => updateStatus(reg, 'contacted')}
+                                                                className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                                                            >
+                                                                Contacted
+                                                            </button>
+                                                        )}
+                                                        {reg.source === 'website' && reg.status !== 'converted' && (
+                                                            <button
+                                                                onClick={() => updateStatus(reg, 'converted')}
+                                                                className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                                                            >
+                                                                Converted
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                {demoRegistrations.length === 0 && (
+                                {allDemoRegistrations.length === 0 && (
                                     <p className="text-center py-8 text-neutral-500">No demo registrations yet</p>
                                 )}
                             </div>
@@ -289,7 +505,7 @@ const AdminLeadsOverview = () => {
                                                 <td className="px-4 py-3 text-neutral-600">{lead.phone}</td>
                                                 <td className="px-4 py-3">
                                                     <span className={`px-2 py-1 rounded-full text-xs ${lead.formType === 'school' ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-purple-100 text-purple-700'
+                                                        'bg-purple-100 text-purple-700'
                                                         }`}>
                                                         {lead.formType}
                                                     </span>
