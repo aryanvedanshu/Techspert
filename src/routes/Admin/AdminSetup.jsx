@@ -16,13 +16,22 @@ import { auth, db } from '../../config/firebase'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function AdminSetup() {
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, loading: authLoading } = useAuth()
     const [email, setEmail] = useState('admin@techspert.com')
     const [password, setPassword] = useState('admin123456')
     const [status, setStatus] = useState('')
     const [logs, setLogs] = useState([])
     const [loading, setLoading] = useState(false)
     const [mode, setMode] = useState('create') // 'create' or 'update'
+
+    // Wait for auth to be determined
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            </div>
+        )
+    }
 
     // Require admin to be logged in
     if (!isAuthenticated) {

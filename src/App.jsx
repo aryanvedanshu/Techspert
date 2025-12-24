@@ -38,7 +38,6 @@ import AdminMessagingCenter from './routes/Admin/AdminMessagingCenter'
 import AdminPageManagement from './routes/Admin/AdminPageManagement'
 import AdminSetup from './routes/Admin/AdminSetup'
 import PageTemplate from './routes/PageTemplate'
-import AdminDemoClassManagement from './routes/Admin/AdminDemoClassManagement'
 import AdminEnquiriesManagement from './routes/Admin/AdminEnquiriesManagement'
 import AdminLeadsOverview from './routes/Admin/AdminLeadsOverview'
 import AdminLinkManagement from './routes/Admin/AdminLinkManagement'
@@ -91,7 +90,6 @@ function App() {
                   <Route path="/admin/admins" element={<AdminAdminManagement />} />
                   <Route path="/admin/messaging" element={<AdminMessagingCenter />} />
                   <Route path="/admin/pages" element={<AdminPageManagement />} />
-                  <Route path="/admin/demo-class" element={<AdminDemoClassManagement />} />
                   <Route path="/admin/enquiries" element={<AdminEnquiriesManagement />} />
                   <Route path="/admin/leads" element={<AdminLeadsOverview />} />
                   <Route path="/admin/link-management" element={<AdminLinkManagement />} />

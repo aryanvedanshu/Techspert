@@ -5,7 +5,7 @@ import {
     Users, BookOpen, Code, Award, TrendingUp, Eye, Plus, Settings,
     Palette, Mail, Globe, Shield, BarChart3, Clock, DollarSign,
     Star, Activity, AlertCircle, CheckCircle, XCircle, RefreshCw,
-    UserCheck, HelpCircle, Phone, Target, Brain, Database, GraduationCap,
+    UserCheck, HelpCircle, Phone, Target, Brain, Database,
     MessageSquare, LogOut
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -211,12 +211,12 @@ const AdminDashboard = () => {
                         </Card>
                     </Link>
 
-                    <Link to="/admin/demo-class">
+                    <Link to="/admin/setup">
                         <Card hover>
                             <div className="p-6">
-                                <GraduationCap className="text-orange-600 mb-4" size={32} />
-                                <h3 className="font-semibold text-lg mb-2">Demo Classes</h3>
-                                <p className="text-neutral-600 text-sm">Manage demo link & registrations</p>
+                                <Shield className="text-orange-600 mb-4" size={32} />
+                                <h3 className="font-semibold text-lg mb-2">Admin Setup</h3>
+                                <p className="text-neutral-600 text-sm">Create or configure admin users</p>
                             </div>
                         </Card>
                     </Link>
@@ -256,7 +256,7 @@ const AdminDashboard = () => {
                             <div className="p-6">
                                 <Globe className="text-teal-600 mb-4" size={32} />
                                 <h3 className="font-semibold text-lg mb-2">Link Management</h3>
-                                <p className="text-neutral-600 text-sm">Manage demo & payment links</p>
+                                <p className="text-neutral-600 text-sm">Manage demo, form & payment links</p>
                             </div>
                         </Card>
                     </Link>
